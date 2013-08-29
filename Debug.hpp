@@ -59,23 +59,23 @@
                                 @return None
                             */
   #define ASSERT(expr)      {if (!(expr)) if (pdbgMessages) pdbgMessages->Assert  ( (expr), (strAssertFile), (unsigned long)__LINE__);}
-                            /** @brief This macro throws the given informational message to the currently active DebugMessages object.  It takes printf() style formatting parameters.
-                                @param ... The null terminates string to write to the debug object.
+                            /** @brief This macro throws the given informational message to the currently active DebugMessages object. 
+                                @param ... Printf() style formatting parameters to write to the debug object.
                                 @return None
                             */
   #define DBG_MARK(...)     {if (pdbgMessages) {strDbgBuffer.Format (__VA_ARGS__); pdbgMessages->RunMark ((strDbgBuffer.AsChar()), (strAssertFile), (unsigned long)__LINE__);};}
-                            /** @brief This macro throws the given info message to the currently active DebugMessages object.  It takes printf() style formatting parameters.
-                                @param ... The null terminates string to write to the debug object.
+                            /** @brief This macro throws the given info message to the currently active DebugMessages object.
+                                @param ... Printf() style formatting parameters to write to the debug object.
                                 @return None
                             */
   #define DBG_INFO(...)     {if (pdbgMessages) {strDbgBuffer.Format (__VA_ARGS__); pdbgMessages->Info ((strDbgBuffer.AsChar()), (strAssertFile), (unsigned long)__LINE__);};}
-                            /** @brief This macro throws the given warning message to the currently active DebugMessages object.  It takes printf() style formatting parameters.
-                                @param ... The null terminates string to write to the debug object.
+                            /** @brief This macro throws the given warning message to the currently active DebugMessages object.
+                                @param ... Printf() style formatting parameters to write to the debug object.
                                 @return None
                             */
   #define DBG_WARNING(...)  {if (pdbgMessages) {strDbgBuffer.Format (__VA_ARGS__); pdbgMessages->Warning ((strDbgBuffer.AsChar()), (strAssertFile), (unsigned long)__LINE__);};}
-                            /** @brief This macro throws the given error message to the currently active DebugMessages object.  It takes printf() style formatting parameters.
-                                @param ... The null terminates string to write to the debug object.
+                            /** @brief This macro throws the given error message to the currently active DebugMessages object.  
+                                @param ... Printf() style formatting parameters to write to the debug object.
                                 @return None
                             */
   #define DBG_ERROR(...)    {if (pdbgMessages) {strDbgBuffer.Format (__VA_ARGS__); pdbgMessages->Error   ((strDbgBuffer.AsChar()), (strAssertFile), (unsigned long)__LINE__);};}
