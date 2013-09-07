@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------
-                            PolarFlow File Path
+                            TEdit File Path
 
      This module implements cross-platform routines for dealing with
      file and directory paths
@@ -8,22 +8,22 @@
    ----------------------------------------------------------------- */
 
 // FilePath.hpp
-// Copyright 2004, 2008,  Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// Copyright 2004, 2008, 2013,  Michael T. Duffy.  
+// contact:  mduffor@gmail.com
 
-// This file is part of PolarFlow.
+// This file is part of TEdit.
 //
-// PolarFlow is free software: you can redistribute it and/or modify
+// TEdit is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License version 3 as
 // published by the Free Software Foundation.
 //
-// PolarFlow is distributed in the hope that it will be useful,
+// TEdit is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PolarFlow.  If not, see <http://www.gnu.org/licenses/>.
+// along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef FILEPATH_HPP
 #define FILEPATH_HPP
@@ -151,7 +151,7 @@ class FilePath
                                   unsigned char *  pbyBufferOut);
 
     static EStatus  WriteToFile  (const char *     szFilenameIn,
-                                  INT              iStartOffsetIn,
+                                  BOOL             bAppend,
                                   INT              iBytesToWriteIn,
                                   unsigned char *  pbyBufferIn);
   };

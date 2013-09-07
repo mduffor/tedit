@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------
-                            PolarFlow File Path
+                            TEdit File Path
 
      This module implements cross-platform routines for dealing with
      file and directory paths
@@ -8,22 +8,22 @@
    ----------------------------------------------------------------- */
 
 // FilePath.cpp
-// Copyright 2004, 2008, Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// Copyright 2004, 2008, 2013, Michael T. Duffy.  
+// contact:  mduffor@gmail.com
 
-// This file is part of PolarFlow.
+// This file is part of TEdit.
 //
-// PolarFlow is free software: you can redistribute it and/or modify
+// TEdit is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License version 3 as
 // published by the Free Software Foundation.
 //
-// PolarFlow is distributed in the hope that it will be useful,
+// TEdit is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PolarFlow.  If not, see <http://www.gnu.org/licenses/>.
+// along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "Debug.hpp"
@@ -611,7 +611,7 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
   BOOL             bDone = false;
   RStrArray        arrayOut;
 
-  // Note:  Anytime you store or use a path in PolarFlow, use UNIX style forward slashes.
+  // Note:  Anytime you store or use a path in TEdit, use UNIX style forward slashes.
   //   However anytime a string is passed to windows, make sure you reverse the slashes
   //   to back-slashes.  You must do any regular expression compares as forward slashes
   //   otherwise you'll wind up escaping characters.
@@ -1149,9 +1149,9 @@ EStatus  FilePath::ReadFromFile  (const char *     szFilenameIn,
 
 //------------------------------------------------------------------------------
 EStatus  FilePath::WriteToFile  (const char *     szFilenameIn,
-                                  INT              iStartOffsetIn,
-                                  INT              iBytesToWriteIn,
-                                  unsigned char *  pbyBufferIn)
+                                 BOOL             bAppend,
+                                 INT              iBytesToWriteIn,
+                                 unsigned char *  pbyBufferIn)
   {
   FILE *             fp;
   INT                iBytesToWrite = iBytesToWriteIn;
@@ -1165,8 +1165,14 @@ EStatus  FilePath::WriteToFile  (const char *     szFilenameIn,
   // Make sure input values are valid
   //ASSERT (strFilenameFinal != "");
   if (strFilenameFinal == RStr("")) return EStatus (EStatus::kFailure, "FilePath::WriteToFile () : Empty Filename");
-
-  fp = fopen (strFilenameFinal.AsChar (), "wb");
+  if (bAppend)
+    {
+    fp = fopen (strFilenameFinal.AsChar (), "ab");
+    }
+  else
+    {
+    fp = fopen (strFilenameFinal.AsChar (), "wb");
+    }
   if (fp == NULL)
     {
     //sprintf (szDbgBuffer, "Unable to open file %s", szFilename); DebugMessage (szDbgBuffer);
@@ -1174,29 +1180,6 @@ EStatus  FilePath::WriteToFile  (const char *     szFilenameIn,
     strOut += strFilenameFinal;
     return EStatus (EStatus::kFailure, strOut.AsChar ());
     };
-
-  fseek (fp, 0, SEEK_END);
-  int  iFileLength = ftell (fp);
-  
-  if (iStartOffsetIn > iFileLength)
-    {
-    // we are seeking to a position past the end of the file.  Grow the file
-    //  to make this offset valid
-
-    int   iGrowSize = iStartOffsetIn - iFileLength;
-    char *  pchBlank = new char [iGrowSize];
-    memset (pchBlank, 0, iGrowSize);
-
-    if (fwrite (pchBlank, 1, iGrowSize, fp) != 1)
-      {
-      // error, couldn't write a blank buffer
-      };
-    delete [] pchBlank;
-    };
-
-  // set the starting offset.
-  fseek (fp, iStartOffsetIn, SEEK_SET);
-
   if (fwrite (pbyBufferIn, 1, iBytesToWrite, fp) != (unsigned int) iBytesToWrite)
     {
     fclose (fp);
