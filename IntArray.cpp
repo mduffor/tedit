@@ -8,7 +8,7 @@
 
 // IntArray.hpp
 // Copyright 2004, 2008, Michael T. Duffy.  All Rights Reserved
-// contact:  mduffor@users.sourceforge.net
+// contact:  mduffor@gmail.com
 
 // This file is part of TEdit.
 //
