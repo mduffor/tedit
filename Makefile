@@ -8,11 +8,13 @@ RELEASEVERSION=1
 OWNER=mduffy
 GROUP=programming
 CTAGS= ctags -x >tags
-CFLAGS= -O -Wall -DLINUX -I./ -I../RavenLib/
+CFLAGS= -O -Wall -DLINUX -I./ -I../cppunit/include/
 DEBUGFLAGS= -g -DDEBUG
 #-ansi
 # remove symobl table and relcoation info from executable
 LDFLAGS= -s -L$(HOME)/lib
+LDFLAGSTEST= ${LDFLAGS} -lcppunit -ldl -L/usr/lib/
+#LDFLAGSTEST= ${LDFLAGS} -Wl,--no-as-needed -lcppunit
 
 CC=g++
 GET=cvs co
@@ -21,8 +23,17 @@ LDCONFIG=/sbin/ldconfig
 
 
 SRCS=Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
-     FilePath.cpp  RStrParser.cpp GapBuffer.cpp Main.cpp 
+     FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp Main.cpp \
+     Command.cpp BufferCommands.cpp
 OBJS=$(SRCS:.cpp=.o)
+
+TESTSRCS=UnitMain.cpp Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
+     FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp \
+     Command.cpp BufferCommands.cpp \
+     GapBufferTest.cpp IntArrayTest.cpp 
+TESTOBJS=$(TESTSRCS:.cpp=.o)
+
+
 OBJPATH=./obj
 SHAR=shar
 MANDIR=
@@ -33,9 +44,15 @@ VPATH=$(OBJPATH)
 .SUFFIXES: .cpp .hpp .o
 
 
-all: ${PROGNAME}
-	@echo "Testing all\n"
-	echo $(OBJS)
+all: ${PROGNAME} $(PROGNAME)_test
+#	@echo "Testing all\n"
+#	@echo $(OBJS)
+	@echo "\n\nUnit Testing\n"
+	@${PROGNAME}_test
+
+test: ${PROGNAME}_test
+	@echo "\n\nUnit Testing\n"
+	${PROGNAME}_test
 
 # get things out of CVS
 #$(SRCS):
@@ -44,13 +61,18 @@ all: ${PROGNAME}
 # to make an executable
 
 $(PROGNAME): $(OBJS)
-	@echo "Testing all\n"
-	echo $(OBJS)
-	@echo ""
+#	@echo "Testing progname\n"
+#	echo $(OBJS)
+#	@echo ""
 	@echo "Linking $(PROGNAME)"
 	mkdir -p $(OBJPATH)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS:%=$(OBJPATH)/%)
-
+	$(CC) -o $@ $(OBJS:%=$(OBJPATH)/%) $(LDFLAGS) 
+	
+$(PROGNAME)_test: $(TESTOBJS)
+	@echo ""
+	@echo "Linking $(PROGNAME)_test"
+	mkdir -p $(OBJPATH)
+	$(CC) -o $@ $(TESTOBJS:%=$(OBJPATH)/%) $(LDFLAGSTEST)
 
 clean:
 	rm -f $(OBJS:%=$(OBJPATH)/%)
