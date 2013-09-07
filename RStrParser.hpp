@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------
-                            PolarFlow String Parser
+                            TEdit String Parser
 
     The RStrParser class is used to create a RStr that has member functions
    for extracting, parsing, and manipulating the contents of the string.
@@ -9,21 +9,21 @@
 
 // RStringParser.hpp
 // Copyright 2004, 2008, Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// contact:  mduffor@gmail.com
 
-// This file is part of PolarFlow.
+// This file is part of TEdit.
 //
-// PolarFlow is free software: you can redistribute it and/or modify
+// TEdit is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License version 3 as
 // published by the Free Software Foundation.
 //
-// PolarFlow is distributed in the hope that it will be useful,
+// TEdit is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PolarFlow.  If not, see <http://www.gnu.org/licenses/>.
+// along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifndef RSTRPARSER_HPP
@@ -379,7 +379,6 @@ class RAVEN_EXPORT RStrParser : public RStr
                                  @return None
                              */
     EStatus  WriteToFile     (const char * szFilenameIn,
-                              INT          iStartOffsetIn  = 0,
                               INT          iBytesToWriteIn = -1);
 
 

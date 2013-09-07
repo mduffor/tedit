@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-                            PolarFlow String Parser
+                            TEdit String Parser
 
     The RStrParser class is used to create a RStr that has member functions
    for extracting, parsing, and manipulating the contents of the string.
@@ -9,21 +9,21 @@
 
 // RStrParser.cpp
 // Copyright 2002, 2008, Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// contact:  mduffor@gmail.com
 
-// This file is part of PolarFlow.
+// This file is part of TEdit.
 //
-// PolarFlow is free software: you can redistribute it and/or modify
+// TEdit is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License version 3 as
 // published by the Free Software Foundation.
 //
-// PolarFlow is distributed in the hope that it will be useful,
+// TEdit is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PolarFlow.  If not, see <http://www.gnu.org/licenses/>.
+// along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 
 
 // *****************************************************************************
@@ -1086,7 +1086,6 @@ EStatus  RStrParser::ReadFromFile  (const char *  szFilenameIn,
 
 //------------------------------------------------------------------------------
 EStatus  RStrParser::WriteToFile  (const char *  szFilenameIn,
-                                   INT           iStartOffsetIn,
                                    INT           iBytesToWriteIn)
   {
   // Note:  You eventually need to create a progressive write function so that
@@ -1102,9 +1101,9 @@ EStatus  RStrParser::WriteToFile  (const char *  szFilenameIn,
     };
   
   return (FilePath::WriteToFile (szFilenameIn,
-                                  iStartOffsetIn,
-                                  iBytesToWriteIn,
-                                  (unsigned char *) pszBuffer));
+                                 FALSE,
+                                 iBytesToWriteIn,
+                                 (unsigned char *) pszBuffer));
   };
                                    
                                    
