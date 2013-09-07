@@ -10,8 +10,8 @@
    ----------------------------------------------------------------- */
 
 // BaseArray.hpp
-// Copyright 2004, 2008,  Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// Copyright 2004, 2008, 2013 Michael T. Duffy.  
+// contact:  mduffor@gmail.com
 
 // This file is part of TEdit.
 //
@@ -27,6 +27,8 @@
 // You should have received a copy of the GNU General Public License
 // along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "Debug.hpp"
+ASSERTFILE (__FILE__);
 #include "BaseArray.hpp"
 
 //-----------------------------------------------------------------------------
@@ -193,12 +195,12 @@ EStatus BaseArray::Insert (INT  iStartIndex,
 
   if (bDebug)
     {
-    printf ("BA:Ins %d old:%d cur:%d\n", iStartIndexActual, iOldLength, Length ());
+    DBG_INFO ("BA:Ins %d old:%d cur:%d\n", iStartIndexActual, iOldLength, Length ());
     };
   //printf ("start index %d old length %d\n", iStartIndexActual,iOldLength);
   if ((iStartIndexActual != iLength) && (iOldLength - iStartIndexActual > 0))
     {
-    printf ("Copy values rev %d %d %d\n", iStartIndexActual, iStartIndexActual + iNumToInsert, iOldLength - iStartIndexActual);
+    //DBG_INFO ("Copy values rev %d %d %d\n", iStartIndexActual, iStartIndexActual + iNumToInsert, iOldLength - iStartIndexActual);
     CopyValuesRev (pArray, iStartIndexActual, iStartIndexActual + iNumToInsert, iOldLength - iStartIndexActual);
     };
 

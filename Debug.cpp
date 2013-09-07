@@ -9,6 +9,7 @@
 
 // Debug.cpp
 // Copyright 2002, 2008 Michael T. Duffy.  All Rights Reserved
+// contact:  mduffor@gmail.com
 
 // This file is part of TEdit.
 //
@@ -230,6 +231,7 @@ void  DebugMessages::RawWriteLog  (const char *  pszTextIn)
   #ifdef ANDROID_NDK
     __android_log_print(ANDROID_LOG_INFO, "RavenDebug", "%s", pszTextIn);
   #else
+    printf ("%s\n", pszTextIn);
     fp = fopen ("debug.err", "at");
     if (fp != NULL)
       {

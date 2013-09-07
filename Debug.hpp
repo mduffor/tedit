@@ -6,6 +6,8 @@
 
    ----------------------------------------------------------------- */
 
+// contact:  mduffor@gmail.com
+
 // This file is part of TEdit.
 //
 // TEdit is free software: you can redistribute it and/or modify

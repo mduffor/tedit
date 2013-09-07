@@ -10,8 +10,8 @@
    ----------------------------------------------------------------- */
 
 // BaseArray.hpp
-// Copyright 2004, 2008, Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// Copyright 2004, 2008, 2013 Michael T. Duffy.  
+// contact:  mduffor@gmail.com
 
 // This file is part of TEdit.
 //

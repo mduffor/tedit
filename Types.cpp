@@ -9,7 +9,7 @@
 
 // Types.cpp
 // Copyright 2004, 2008, Michael T. Duffy.  
-// contact:  mduffor@users.sourceforge.net
+// contact:  mduffor@gmail.com
 
 // This file is part of TEdit.
 //
