@@ -39,7 +39,7 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("CursorUp", CmdCursorUp);
   cmdManagerIn.AddCommand ("CursorDown", CmdCursorDown);
   cmdManagerIn.AddCommand ("CursorLeft", CmdCursorLeft);
-  cmdManagerIn.AddCommand ("CursorRight", CmdCursorUp);
+  cmdManagerIn.AddCommand ("CursorRight", CmdCursorRight);
   };
   
   

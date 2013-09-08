@@ -145,13 +145,18 @@ void GapBufferTest::testConstructor()
 
   // test ReplaceChar and ReplaceString with linefeeds.
   gapBuffer->SetCursor (1,0);
-  gapBuffer->ReplaceString ("abcd\nefgh");
+  gapBuffer->ReplaceString ("abcd\nefgh\nijk");
   gapBuffer->FillGap ();
   szRawBuffer = gapBuffer->GetBuffer();
-  CPPUNIT_ASSERT (strncmp (&szRawBuffer[0], "abcd\nefgh901234", 15) == 0);
+  CPPUNIT_ASSERT (strncmp (&szRawBuffer[0], "abcd\nefgh\nijk34", 15) == 0);
   CPPUNIT_ASSERT (gapBuffer->GetLineLength (1) == 4);
   CPPUNIT_ASSERT (gapBuffer->GetLineLength (2) == 4);
-  
+  CPPUNIT_ASSERT (gapBuffer->GetLineLength (3) == 3);
+
+  gapBuffer->Clear ();
+  gapBuffer->SetCursor (1,0);
+  gapBuffer->ReplaceString ("abcd\nefgh");
+  gapBuffer->FillGap ();
   gapBuffer->SetCursor (1,2);
   gapBuffer->ReplaceChar ('C');
   gapBuffer->FillGap ();

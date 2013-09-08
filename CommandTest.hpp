@@ -26,6 +26,7 @@
 class CommandTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE( CommandTest );
+  CPPUNIT_TEST( testCommandManager );
   CPPUNIT_TEST( testCommand );
   CPPUNIT_TEST_SUITE_END();
 
@@ -33,7 +34,8 @@ public:
   void setUp();
   void tearDown();
 
-  void testCommand();
+  void testCommand ();
+  void testCommandManager ();
 };
 
 

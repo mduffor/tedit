@@ -376,6 +376,7 @@ VOID  GapBuffer::InsertString  (const char *  szStringIn)
           aiLineOffsets.Insert (iIndex, 1);
           aiLineOffsets[iIndex] = iSearch + 1;
           ++iIndex;
+          break;
           }
         }
       locCursor.iLine += 1;

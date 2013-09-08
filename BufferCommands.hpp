@@ -23,7 +23,8 @@
 
 
 
-VOID InitBufferCommands (GapBufferManager *  pManagerIn);
+VOID InitBufferCommands (GapBufferManager *  pManagerIn,
+                         CommandManager &    cmdManagerIn);
 
 
 VOID CmdCursorUp (RStrArray *  arrayParams);
