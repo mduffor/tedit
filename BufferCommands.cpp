@@ -40,6 +40,13 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("CursorDown", CmdCursorDown);
   cmdManagerIn.AddCommand ("CursorLeft", CmdCursorLeft);
   cmdManagerIn.AddCommand ("CursorRight", CmdCursorRight);
+  
+  cmdManagerIn.AddCommand ("CursorNextWord", CmdCursorNextWord);
+  cmdManagerIn.AddCommand ("CursorPrevWord", CmdCursorPrevWord);
+  cmdManagerIn.AddCommand ("CursorStartLine", CmdCursorStartLine);
+  cmdManagerIn.AddCommand ("CursorEndLine", CmdCursorEndLine);
+  cmdManagerIn.AddCommand ("CursorStartDoc", CmdCursorStartDoc);
+  cmdManagerIn.AddCommand ("CursorEndDoc", CmdCursorEndDoc);
   };
   
   
@@ -99,6 +106,79 @@ VOID CmdCursorRight (RStrArray *  arrayParams)
   
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
+  locCursor.iCol += 1;
+  pBuffer->SetCursor (locCursor);
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorStartDoc (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  pBuffer->SetCursor (1, 0);
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorEndDoc (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  INT  iLastLine = pBuffer->GetNumLines ();
+  pBuffer->SetCursor (iLastLine, pBuffer->GetLineLength (iLastLine));
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorStartLine (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  Location  locCursor = pBuffer->GetCursor ();
+  locCursor.iCol = 0;
+  pBuffer->SetCursor (locCursor);
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorEndLine (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  Location  locCursor = pBuffer->GetCursor ();
+  locCursor.iCol = pBuffer->GetLineLength (locCursor.iLine);
+  pBuffer->SetCursor (locCursor);
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorNextWord (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  Location  locCursor = pBuffer->GetCursor ();
+
+  
+  locCursor.iCol += 1;
+  pBuffer->SetCursor (locCursor);
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorPrevWord (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  Location  locCursor = pBuffer->GetCursor ();
+
+  
   locCursor.iCol += 1;
   pBuffer->SetCursor (locCursor);
   // not undoable  

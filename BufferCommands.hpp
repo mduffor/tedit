@@ -35,6 +35,16 @@ VOID CmdCursorLeft (RStrArray *  arrayParams);
 
 VOID CmdCursorRight (RStrArray *  arrayParams);
 
+VOID CmdCursorStartDoc (RStrArray *  arrayParams);
+VOID CmdCursorEndDoc (RStrArray *  arrayParams);
+VOID CmdCursorStartLine (RStrArray *  arrayParams);
+VOID CmdCursorEndLine (RStrArray *  arrayParams);
+VOID CmdCursorNextWord (RStrArray *  arrayParams);
+VOID CmdCursorPrevWord (RStrArray *  arrayParams);
+
+  
+  
+
 
 
 #endif // BUFFERCOMMANDS_HPP
