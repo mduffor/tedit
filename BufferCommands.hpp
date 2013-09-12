@@ -21,20 +21,19 @@
 #ifndef BUFFERCOMMANDS_HPP
 #define BUFFERCOMMANDS_HPP
 
-
+#include "GapBufferManager.hpp"
+#include "Command.hpp"
+#include "FormatInfo.hpp"
 
 VOID InitBufferCommands (GapBufferManager *  pManagerIn,
-                         CommandManager &    cmdManagerIn);
+                         CommandManager &    cmdManagerIn,
+                         FormatInfo *        pFormatIn);
 
 
 VOID CmdCursorUp (RStrArray *  arrayParams);
-
 VOID CmdCursorDown (RStrArray *  arrayParams);
-
 VOID CmdCursorLeft (RStrArray *  arrayParams);
-
 VOID CmdCursorRight (RStrArray *  arrayParams);
-
 VOID CmdCursorStartDoc (RStrArray *  arrayParams);
 VOID CmdCursorEndDoc (RStrArray *  arrayParams);
 VOID CmdCursorStartLine (RStrArray *  arrayParams);
@@ -42,7 +41,27 @@ VOID CmdCursorEndLine (RStrArray *  arrayParams);
 VOID CmdCursorNextWord (RStrArray *  arrayParams);
 VOID CmdCursorPrevWord (RStrArray *  arrayParams);
 
+VOID CmdSelectUp (RStrArray *  arrayParams);
+VOID CmdSelectDown (RStrArray *  arrayParams);
+VOID CmdSelectLeft (RStrArray *  arrayParams);
+VOID CmdSelectRight (RStrArray *  arrayParams);
+VOID CmdSelectStartDoc (RStrArray *  arrayParams);
+VOID CmdSelectEndDoc (RStrArray *  arrayParams);
+VOID CmdSelectStartLine (RStrArray *  arrayParams);
+VOID CmdSelectEndLine (RStrArray *  arrayParams);
+VOID CmdSelectNextWord (RStrArray *  arrayParams);
+VOID CmdSelectPrevWord (RStrArray *  arrayParams);
   
+VOID CursorUp (VOID);
+VOID CursorDown (VOID);
+VOID CursorLeft (VOID);
+VOID CursorRight (VOID);
+VOID CursorStartDoc (VOID);
+VOID CursorEndDoc (VOID);
+VOID CursorStartLine (VOID);
+VOID CursorEndLine (VOID);
+VOID CursorNextWord (VOID);
+VOID CursorPrevWord (VOID);
   
 
 

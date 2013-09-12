@@ -29,12 +29,15 @@ ASSERTFILE (__FILE__)
 #include "BufferCommands.hpp"
 
 static GapBufferManager * pGapBufferManager = NULL;
+static FormatInfo *       pFormatInfo = NULL;
 
 //-----------------------------------------------------------------------------
 VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
-                         CommandManager &    cmdManagerIn)
+                         CommandManager &    cmdManagerIn,
+                         FormatInfo *        pFormatIn)
   {
   pGapBufferManager = pBufferManagerIn;
+  pFormatInfo = pFormatIn;
   
   cmdManagerIn.AddCommand ("CursorUp", CmdCursorUp);
   cmdManagerIn.AddCommand ("CursorDown", CmdCursorDown);
@@ -47,11 +50,181 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("CursorEndLine", CmdCursorEndLine);
   cmdManagerIn.AddCommand ("CursorStartDoc", CmdCursorStartDoc);
   cmdManagerIn.AddCommand ("CursorEndDoc", CmdCursorEndDoc);
+  
+  cmdManagerIn.AddCommand ("SelectUp", CmdCursorUp);
+  cmdManagerIn.AddCommand ("SelectDown", CmdCursorDown);
+  cmdManagerIn.AddCommand ("SelectLeft", CmdCursorLeft);
+  cmdManagerIn.AddCommand ("SelectRight", CmdCursorRight);
+  
+  cmdManagerIn.AddCommand ("SelectNextWord", CmdCursorNextWord);
+  cmdManagerIn.AddCommand ("SelectPrevWord", CmdCursorPrevWord);
+  cmdManagerIn.AddCommand ("SelectStartLine", CmdCursorStartLine);
+  cmdManagerIn.AddCommand ("SelectEndLine", CmdCursorEndLine);
+  cmdManagerIn.AddCommand ("SelectStartDoc", CmdCursorStartDoc);
+  cmdManagerIn.AddCommand ("SelectEndDoc", CmdCursorEndDoc);
+  
+  
+  };
+
+//-----------------------------------------------------------------------------
+VOID StartSelection (VOID)
+  {
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  if (!pBuffer->IsSelectionValid ())
+    {
+    pBuffer->SetSelection (pBuffer->GetCursor ());
+    };
   };
   
+//-----------------------------------------------------------------------------
+VOID DismissSelection (VOID)
+  {
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  pBuffer->ClearSelection ();
+  };
   
 //-----------------------------------------------------------------------------
 VOID CmdCursorUp (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorUp ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorDown (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorDown ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorLeft (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorLeft ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorRight (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorRight ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorStartDoc (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorStartDoc ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorEndDoc (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorEndDoc ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorStartLine (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorStartLine ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorEndLine (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorEndLine ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorNextWord (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorNextWord ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdCursorPrevWord (RStrArray *  arrayParams)
+  {
+  DismissSelection ();
+  CursorPrevWord ();
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdSelectUp (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorUp ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectDown (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorDown ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectLeft (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorLeft ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectRight (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorRight ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectStartDoc (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorStartDoc ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectEndDoc (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorEndDoc ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectStartLine (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorStartLine ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectEndLine (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorEndLine ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectNextWord (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorNextWord ();
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectPrevWord (RStrArray *  arrayParams)
+  {
+  StartSelection ();
+  CursorPrevWord ();
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CursorUp (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -65,7 +238,7 @@ VOID CmdCursorUp (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorDown (RStrArray *  arrayParams)
+VOID CursorDown (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -77,7 +250,7 @@ VOID CmdCursorDown (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorLeft (RStrArray *  arrayParams)
+VOID CursorLeft (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -100,7 +273,7 @@ VOID CmdCursorLeft (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorRight (RStrArray *  arrayParams)
+VOID CursorRight (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -112,7 +285,7 @@ VOID CmdCursorRight (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorStartDoc (RStrArray *  arrayParams)
+VOID CursorStartDoc ()
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -122,7 +295,7 @@ VOID CmdCursorStartDoc (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorEndDoc (RStrArray *  arrayParams)
+VOID CursorEndDoc (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -133,7 +306,7 @@ VOID CmdCursorEndDoc (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorStartLine (RStrArray *  arrayParams)
+VOID CursorStartLine (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -145,7 +318,7 @@ VOID CmdCursorStartLine (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorEndLine (RStrArray *  arrayParams)
+VOID CursorEndLine (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
@@ -157,32 +330,100 @@ VOID CmdCursorEndLine (RStrArray *  arrayParams)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorNextWord (RStrArray *  arrayParams)
+VOID CursorNextWord (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
 
+  // if beyond buffer, do nothing
+  if (locCursor.iLine > pBuffer->GetNumLines())
+    {
+    return;
+    }
   
-  locCursor.iCol += 1;
+  // if at line end, go to line beginning
+  INT  iCurrChar = pBuffer->GetCharAtLocation (locCursor);
+  if (pFormatInfo->IsEOL (iCurrChar) || (iCurrChar == -1))
+    {
+    locCursor.iLine += 1;
+    locCursor.iCol = 0;
+    pBuffer->SetCursor (locCursor);
+    return;
+    }
+  // move forward past any word characters you are on
+  while (pFormatInfo->IsWordChar (pBuffer->GetCharAtLocation (locCursor))) 
+    {
+    locCursor.iCol += 1;
+    };
+  // move past any non-word characters, such as whitespace and punctuation  
+  iCurrChar = pBuffer->GetCharAtLocation (locCursor);
+  while ((!pFormatInfo->IsWordChar (iCurrChar)) && 
+            (!pFormatInfo->IsEOL (iCurrChar)) && 
+            (iCurrChar != -1))
+    {
+    locCursor.iCol += 1;
+    iCurrChar = pBuffer->GetCharAtLocation (locCursor);
+    }
+
   pBuffer->SetCursor (locCursor);
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCursorPrevWord (RStrArray *  arrayParams)
+VOID CursorPrevWord (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
   
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
 
+  // if beyond buffer, go to end
+  if (locCursor.iLine > pBuffer->GetNumLines())
+    {
+    INT  iLastLine = pBuffer->GetNumLines ();
+    pBuffer->SetCursor (iLastLine, pBuffer->GetLineLength (iLastLine));
+    return;
+    }
   
-  locCursor.iCol += 1;
+  // if at line beginning, go to prev line end
+  if ((locCursor.iCol == 0) && (locCursor.iLine > 1))
+    {
+    --locCursor.iLine;
+    locCursor.iCol = pBuffer->GetLineLength (locCursor.iLine);
+    pBuffer->SetCursor (locCursor);
+    return;
+    }
+    
+  // move past any non-word characters, such as whitespace and punctuation  
+  while ((locCursor.iCol != 0) &&
+         (!pFormatInfo->IsWordChar (pBuffer->GetCharAtLocation (locCursor.iLine, locCursor.iCol - 1))))
+    {
+    --locCursor.iCol;
+    }
+
+  // move forward past any word characters you are on
+  while ((locCursor.iCol != 0) &&
+         (pFormatInfo->IsWordChar (pBuffer->GetCharAtLocation (locCursor.iLine, locCursor.iCol - 1))))
+    {
+    --locCursor.iCol;
+    };
   pBuffer->SetCursor (locCursor);
   // not undoable  
   };
 
+//-----------------------------------------------------------------------------
+VOID CmdCut (RStrArray *  arrayParams)
+  {
+  ASSERT (pGapBufferManager != NULL);
   
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  
+  Location  locCursor = pBuffer->GetCursor ();
+  locCursor.iCol = pBuffer->GetLineLength (locCursor.iLine);
+  pBuffer->SetCursor (locCursor);
+  // not undoable  
+  };
+
   

@@ -38,6 +38,13 @@ BOOL operator== (const Location & locOne,
   return ((locOne.iCol == locTwo.iCol) && (locOne.iLine == locTwo.iLine));
   }
 
+//-----------------------------------------------------------------------------
+BOOL operator!= (const Location & locOne, 
+                 const Location & locTwo)
+  {
+  return ((locOne.iCol != locTwo.iCol) || (locOne.iLine != locTwo.iLine));
+  }
+
 
 //-----------------------------------------------------------------------------
 GapBuffer::GapBuffer ()
@@ -192,6 +199,39 @@ VOID  GapBuffer::GetString (char * szStringOut, INT iCount)
   INT  iCharsToCopy = TMin (iCharsPastGap, iCount);
   
   memcpy (szStringOut, pBuffer + iGapStart + iGapSize, iCharsToCopy);
+  };
+
+//-----------------------------------------------------------------------------
+INT  GapBuffer::GetCharAtLocation (Location & locIn)
+  {
+  return (GetCharAtLocation (locIn.iLine, locIn.iCol));
+  }
+
+//-----------------------------------------------------------------------------
+INT  GapBuffer::GetCharAtLocation (INT  iLine, INT  iCol)
+  {
+  if (iLine > GetNumLines ())
+    {
+    // past end of buffer.
+    return (-1);
+    }
+  // cursor is on an existing line
+ 
+  // find the column
+  if (iCol > GetLineLength (iLine)) 
+    {
+    // cursor is past the end of the line, on a virtual space.  
+    return (-1);
+    }
+    
+  INT  iLineStartOffset = aiLineOffsets[iLine - 1];
+  INT  iOffset = iLineStartOffset + iCol;    
+    
+  if ((iLineStartOffset <= iGapStart) && (iOffset > iGapStart))
+    {
+    iOffset += iGapSize;
+    }
+  return (pBuffer[iOffset]);
   };
   
 //-----------------------------------------------------------------------------

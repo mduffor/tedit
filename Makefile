@@ -24,13 +24,13 @@ LDCONFIG=/sbin/ldconfig
 
 SRCS=Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
      FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp Main.cpp \
-     Command.cpp BufferCommands.cpp
+     Command.cpp BufferCommands.cpp FormatInfo.cpp
 OBJS=$(SRCS:.cpp=.o)
 
 TESTSRCS=UnitMain.cpp Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
      FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp \
-     Command.cpp BufferCommands.cpp \
-     GapBufferTest.cpp IntArrayTest.cpp 
+     Command.cpp BufferCommands.cpp FormatInfo.cpp \
+     GapBufferTest.cpp IntArrayTest.cpp CommandTest.cpp
 TESTOBJS=$(TESTSRCS:.cpp=.o)
 
 

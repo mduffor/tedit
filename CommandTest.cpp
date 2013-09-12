@@ -99,9 +99,13 @@ void CommandTest::testCommand ()
 {
 
   GapBufferManager *  pManager = new GapBufferManager;
+  FormatInfo *        pFormat = new FormatInfo;
+  
   pManager->CreateBuffer ("TestBuffer");
   GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
   gapBuffer->AllocBuffer (40);
+  gapBuffer->SetGrowSize (10);
+
 //  gapBuffer->FillGap ();
 //  const char * szRawBuffer = gapBuffer->GetBuffer();
   
@@ -112,7 +116,7 @@ void CommandTest::testCommand ()
 
   // test buffer commands
   CommandManager     cmdManager;  
-  InitBufferCommands (pManager, cmdManager);
+  InitBufferCommands (pManager, cmdManager, pFormat);
   
   
   gapBuffer->SetCursor (3, 1);
@@ -147,18 +151,40 @@ void CommandTest::testCommand ()
   cmdManager.ExecuteCommand ("CursorEndDoc", NULL);
   gapBuffer->InsertChar ('Z');
   //CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd efgh ijkl\nmn op qr st\nu v w x\nyz\nZ", 38) == 0);
-  //CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (2, 12));
-    
-/*  
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (5, 1));
+  cmdManager.ExecuteCommand ("CursorStartDoc", NULL);
+  gapBuffer->InsertChar ('A');
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 1));
+
+  cmdManager.ExecuteCommand ("CursorEndLine", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 15));
+  cmdManager.ExecuteCommand ("CursorStartLine", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 0));
+
+  // buffer is "Aabcd efgh ijkl\nmn op qr st\nu v w x\nyz\nZ"
+  gapBuffer->SetCursor (1, 2);
+  cmdManager.ExecuteCommand ("CursorNextWord", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 6));
+  cmdManager.ExecuteCommand ("CursorNextWord", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 11));
+  cmdManager.ExecuteCommand ("CursorNextWord", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 15));
+  cmdManager.ExecuteCommand ("CursorNextWord", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (2, 0));
   
-VOID CmdCursorStartDoc (RStrArray *  arrayParams);
-VOID CmdCursorEndDoc (RStrArray *  arrayParams);
-VOID CmdCursorStartLine (RStrArray *  arrayParams);
-VOID CmdCursorEndLine (RStrArray *  arrayParams);
-VOID CmdCursorNextWord (RStrArray *  arrayParams);
-VOID CmdCursorPrevWord (RStrArray *  arrayParams);  
-  
-*/  
+  gapBuffer->SetCursor (2, 1);
+  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (2, 0));
+  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);
+  //printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 15));
+  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);
+  //printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 11));
+  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);
+  //printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
+  CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 6));
+ 
   
   gapBuffer->FillGap ();
   printf ("GapBuffer is : \n%s\n", gapBuffer->GetBuffer());
@@ -169,6 +195,9 @@ VOID CmdCursorPrevWord (RStrArray *  arrayParams);
 
   delete pManager;
   pManager = NULL;
+  
+  delete pFormat;
+  pFormat = NULL;
   //CPPUNIT_FAIL( "not implemented" );
 }
 
