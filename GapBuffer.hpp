@@ -40,6 +40,10 @@ class Location
 
 BOOL operator== (const Location & locOne, const Location & locTwo);
 BOOL operator!= (const Location & locOne, const Location & locTwo);
+BOOL operator<  (const Location & locOne, const Location & locTwo);
+BOOL operator>  (const Location & locOne, const Location & locTwo);
+BOOL operator<= (const Location & locOne, const Location & locTwo);
+BOOL operator>= (const Location & locOne, const Location & locTwo);
 
 //=============================================================================
 class Mark
@@ -101,7 +105,9 @@ class GapBuffer
     Location &    GetCursor     (VOID)                      {return (locCursor);};;
     INT           GetCursorLine (VOID)                      {return (locCursor.iLine);};
 
-    VOID          SetSelection     (Location &  locIn)      {locSelect.Set (locIn.iLine, locIn.iCol);};
+    VOID          SetSelection     (Location &  locIn)      {SetSelection (locIn.iLine, locIn.iCol);};
+    VOID          SetSelection     (INT  iLine, 
+                                    INT  iCol)              {locSelect.Set (iLine, iCol);};
     Location &    GetSelection     (VOID)                   {return (locSelect);};;
     BOOL          IsSelectionValid (VOID)                   {return (locSelect.iLine != 0 || locSelect.iCol != 0);};
     VOID          ClearSelection   (VOID)                   {locSelect.Set (0,0);};
@@ -114,6 +120,10 @@ class GapBuffer
                                      INT  iCol);
     INT           GetNumChars       (VOID);
     INT           GetNumLines       (VOID);
+    INT           GetCharsBetween   (Location &  locOne,
+                                     Location &  locTwo);
+                                     
+    VOID          ClampLocationToValidChar (Location &  locInOut);
     
     BOOL          IsFileChanged (VOID);  // compare timestamp and size on disk
     VOID          SetIsModified (BOOL bModifiedIn)   {bModified = bModifiedIn;};

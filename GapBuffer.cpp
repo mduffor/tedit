@@ -36,16 +36,49 @@ BOOL operator== (const Location & locOne,
                  const Location & locTwo)
   {
   return ((locOne.iCol == locTwo.iCol) && (locOne.iLine == locTwo.iLine));
-  }
+  };
 
 //-----------------------------------------------------------------------------
 BOOL operator!= (const Location & locOne, 
                  const Location & locTwo)
   {
   return ((locOne.iCol != locTwo.iCol) || (locOne.iLine != locTwo.iLine));
-  }
+  };
 
+//-----------------------------------------------------------------------------
+BOOL operator< (const Location & locOne, 
+                const Location & locTwo)
+  {
+  return ((locOne.iLine < locTwo.iLine) ||
+          ((locOne.iLine == locTwo.iLine) && (locOne.iCol < locTwo.iCol)));
+  };
 
+//-----------------------------------------------------------------------------
+BOOL operator> (const Location & locOne, 
+                const Location & locTwo)
+  {
+  return ((locOne.iLine > locTwo.iLine) ||
+          ((locOne.iLine == locTwo.iLine) && (locOne.iCol > locTwo.iCol)));
+  };
+
+//-----------------------------------------------------------------------------
+BOOL operator<= (const Location & locOne, 
+                const Location & locTwo)
+  {
+  if (locOne == locTwo) return TRUE;
+  return ((locOne.iLine < locTwo.iLine) ||
+          ((locOne.iLine == locTwo.iLine) && (locOne.iCol < locTwo.iCol)));
+  };
+  
+//-----------------------------------------------------------------------------
+BOOL operator>= (const Location & locOne, 
+                const Location & locTwo)
+  {
+  if (locOne == locTwo) return TRUE;
+  return ((locOne.iLine > locTwo.iLine) ||
+          ((locOne.iLine == locTwo.iLine) && (locOne.iCol > locTwo.iCol)));
+  };
+  
 //-----------------------------------------------------------------------------
 GapBuffer::GapBuffer ()
   {
@@ -195,6 +228,10 @@ EStatus  GapBuffer::MoveCursor (INT iCount)
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::GetString (char * szStringOut, INT iCount)
   {
+  if (bCursorMoved)
+    {
+    BeginEdit ();
+    }
   INT  iCharsPastGap = iBufferSize - iGapStart - iGapSize;
   INT  iCharsToCopy = TMin (iCharsPastGap, iCount);
   
@@ -244,6 +281,57 @@ INT  GapBuffer::GetNumChars (VOID)
 INT  GapBuffer::GetNumLines (VOID)
   {
   return (aiLineOffsets.Length () - 1);
+  };
+
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::ClampLocationToValidChar (Location &  locInOut)
+  {
+  if (locInOut.iLine > GetNumLines ())
+    {
+    INT  iLastLine = GetNumLines ();
+    locInOut.Set (iLastLine, GetLineLength (iLastLine));
+    return;
+    }
+  locInOut.iCol = TMin (locInOut.iCol, GetLineLength (locInOut.iLine));
+  }
+  
+//-----------------------------------------------------------------------------
+INT GapBuffer::GetCharsBetween (Location &  locOne,
+                                Location &  locTwo)
+  {
+  Location  locSearch = locOne;
+  Location  locEnd = locTwo;
+  if (locOne > locTwo)
+    {
+    locSearch = locTwo;
+    locEnd    = locOne;
+    }
+    
+  // move search and end to nearest valid buffer character.
+  ClampLocationToValidChar (locSearch);
+  ClampLocationToValidChar (locEnd);
+  
+  // count the characters between the locations
+  INT  iCharsOut = 0;
+  INT  iLineLength = 0;
+  if (locSearch.iLine != locEnd.iLine)
+    {
+    iLineLength = GetLineLength (locSearch.iLine);
+    if (locSearch.iCol < iLineLength) 
+      {
+      iCharsOut = GetLineLength (locSearch.iLine) - locSearch.iCol + 1; 
+      };
+    locSearch.iCol = 0;
+    ++locSearch.iLine;
+    }
+  while (locSearch.iLine < locEnd.iLine)  
+    {
+    iCharsOut += GetLineLength (locSearch.iLine) + 1;
+    ++locSearch.iLine;
+    }
+  iCharsOut += locEnd.iCol - locSearch.iCol;  
+  //printf ("Mark4 %d (%d, %d) to (%d, %d)\n", iCharsOut, locSearch.iLine, locSearch.iCol, locEnd.iLine, locEnd.iCol);
+  return (iCharsOut);
   };
   
 //-----------------------------------------------------------------------------

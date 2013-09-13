@@ -24,10 +24,12 @@
 #include "GapBufferManager.hpp"
 #include "Command.hpp"
 #include "FormatInfo.hpp"
+#include "EditorSettings.hpp"
 
 VOID InitBufferCommands (GapBufferManager *  pManagerIn,
                          CommandManager &    cmdManagerIn,
-                         FormatInfo *        pFormatIn);
+                         FormatInfo *        pFormatIn,
+                         EditorSettings *    pSettings);
 
 
 VOID CmdCursorUp (RStrArray *  arrayParams);
@@ -63,7 +65,12 @@ VOID CursorEndLine (VOID);
 VOID CursorNextWord (VOID);
 VOID CursorPrevWord (VOID);
   
+VOID SelectionCopy (VOID);
+VOID SelectionDelete (VOID);
 
-
+VOID CmdSelectionCut (RStrArray *  arrayParams);
+VOID CmdSelectionCopy (RStrArray *  arrayParams);
+VOID CmdSelectionPaste (RStrArray *  arrayParams);
+VOID CmdSelectionDelete (RStrArray *  arrayParams);
 
 #endif // BUFFERCOMMANDS_HPP

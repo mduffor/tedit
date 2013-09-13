@@ -28,6 +28,7 @@ ASSERTFILE (__FILE__)
 #include "Command.hpp"
 #include "BufferCommands.hpp"
 #include "CommandTest.hpp"
+#include "EditorSettings.hpp"
 #include <string.h>
 
 // Registers the fixture into the 'registry'
@@ -100,6 +101,7 @@ void CommandTest::testCommand ()
 
   GapBufferManager *  pManager = new GapBufferManager;
   FormatInfo *        pFormat = new FormatInfo;
+  EditorSettings *    pSettings = new EditorSettings;
   
   pManager->CreateBuffer ("TestBuffer");
   GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
@@ -116,7 +118,7 @@ void CommandTest::testCommand ()
 
   // test buffer commands
   CommandManager     cmdManager;  
-  InitBufferCommands (pManager, cmdManager, pFormat);
+  InitBufferCommands (pManager, cmdManager, pFormat, pSettings);
   
   
   gapBuffer->SetCursor (3, 1);
@@ -184,6 +186,17 @@ void CommandTest::testCommand ()
   cmdManager.ExecuteCommand ("CursorPrevWord", NULL);
   //printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
   CPPUNIT_ASSERT (gapBuffer->GetCursor () == Location (1, 6));
+ 
+  // buffer is "Aabcd efgh ijkl\nmn op qr st\nu v w x\nyz\nZ"
+  gapBuffer->SetCursor (1, 3);
+  gapBuffer->SetSelection (1, 8);
+  cmdManager.ExecuteCommand ("SelectionCut", NULL);
+  
+  gapBuffer->SetCursor (1, 23);
+  gapBuffer->SetSelection (2, 4);
+  cmdManager.ExecuteCommand ("SelectionCut", NULL);
+ 
+ 
  
   
   gapBuffer->FillGap ();

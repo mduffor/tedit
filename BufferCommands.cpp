@@ -27,18 +27,26 @@ ASSERTFILE (__FILE__)
 #include "GapBuffer.hpp"
 #include "GapBufferManager.hpp"
 #include "BufferCommands.hpp"
+#include "EditorSettings.hpp"
 
 static GapBufferManager * pGapBufferManager = NULL;
 static FormatInfo *       pFormatInfo = NULL;
+static EditorSettings *   pSettings = NULL;
 
 //-----------------------------------------------------------------------------
 VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
                          CommandManager &    cmdManagerIn,
-                         FormatInfo *        pFormatIn)
+                         FormatInfo *        pFormatIn,
+                         EditorSettings *    pSettingsIn)
   {
+  ASSERT (pBufferManagerIn != NULL);
+  ASSERT (pFormatIn != NULL);
+  ASSERT (pSettingsIn != NULL);
+  
   pGapBufferManager = pBufferManagerIn;
   pFormatInfo = pFormatIn;
-  
+  pSettings = pSettingsIn;
+
   cmdManagerIn.AddCommand ("CursorUp", CmdCursorUp);
   cmdManagerIn.AddCommand ("CursorDown", CmdCursorDown);
   cmdManagerIn.AddCommand ("CursorLeft", CmdCursorLeft);
@@ -63,7 +71,7 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("SelectStartDoc", CmdCursorStartDoc);
   cmdManagerIn.AddCommand ("SelectEndDoc", CmdCursorEndDoc);
   
-  
+  cmdManagerIn.AddCommand ("SelectionCut", CmdSelectionCut);
   };
 
 //-----------------------------------------------------------------------------
@@ -414,16 +422,98 @@ VOID CursorPrevWord (VOID)
   };
 
 //-----------------------------------------------------------------------------
-VOID CmdCut (RStrArray *  arrayParams)
+VOID SelectionCopy (VOID)
   {
   ASSERT (pGapBufferManager != NULL);
-  
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+
+  Location locCursor = pBuffer->GetCursor ();
+  Location locSelect = pBuffer->GetSelection ();
   
-  Location  locCursor = pBuffer->GetCursor ();
-  locCursor.iCol = pBuffer->GetLineLength (locCursor.iLine);
-  pBuffer->SetCursor (locCursor);
-  // not undoable  
+  Location locBegin = locCursor;
+  Location locEnd   = locSelect;
+  
+  if (locBegin > locEnd)
+    {
+    locBegin = locSelect;
+    locEnd   = locCursor;
+    }
+
+  pBuffer->ClampLocationToValidChar (locBegin);
+  pBuffer->ClampLocationToValidChar (locEnd);
+    
+
+  // copy selected text to clip
+  pBuffer->SetCursor (locBegin);
+  INT  iCharsToCopy = pBuffer->GetCharsBetween (locBegin, locEnd);
+  
+  RStr &  strClip = pSettings->GetClip ();
+  strClip.GrowAbsolute (iCharsToCopy + 1);
+  strClip.SetAt (iCharsToCopy, '\0');
+  
+  pBuffer->GetString (strClip.GetBufferPtr (), iCharsToCopy);
+  //printf ("Copied %d chars (%d, %d) to (%d, %d):\n", iCharsToCopy, locBegin.iLine, locBegin.iCol, locEnd.iLine, locEnd.iCol);
+  //printf (strClip.AsChar ());
+  //printf ("\n");
+  
+  // undoable  
+  
   };
 
+//-----------------------------------------------------------------------------
+VOID SelectionDelete (VOID)
+  {
+  ASSERT (pGapBufferManager != NULL);
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+
+  Location locCursor = pBuffer->GetCursor ();
+  Location locSelect = pBuffer->GetSelection ();
+  
+  Location locBegin = locCursor;
+  Location locEnd   = locSelect;
+  
+  if (locBegin > locEnd)
+    {
+    locBegin = locSelect;
+    locEnd   = locCursor;
+    }
+
+  pBuffer->ClampLocationToValidChar (locBegin);
+  pBuffer->ClampLocationToValidChar (locEnd);
+    
+
+  pBuffer->SetCursor (locBegin);
+  INT  iCharsToDelete = pBuffer->GetCharsBetween (locBegin, locEnd);
+  
+  pBuffer->DeleteChars (iCharsToDelete);
+  
+  // undoable  
+  
+  };
+  
+  
+//-----------------------------------------------------------------------------
+VOID CmdSelectionCut (RStrArray *  arrayParams)
+  {
+  SelectionCopy ();
+  SelectionDelete ();
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdSelectionCopy (RStrArray *  arrayParams)
+  {
+  SelectionCopy ();
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdSelectionPaste (RStrArray *  arrayParams)
+  {
+  };
+
+//-----------------------------------------------------------------------------
+VOID CmdSelectionDelete (RStrArray *  arrayParams)
+  {
+  SelectionDelete ();
+  };
+  
   
