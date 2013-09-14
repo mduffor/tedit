@@ -466,6 +466,11 @@ VOID SelectionDelete (VOID)
   ASSERT (pGapBufferManager != NULL);
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
 
+  if (!pBuffer->IsSelectionValid())
+    {
+    return;
+    }
+  
   Location locCursor = pBuffer->GetCursor ();
   Location locSelect = pBuffer->GetSelection ();
   
@@ -486,6 +491,7 @@ VOID SelectionDelete (VOID)
   INT  iCharsToDelete = pBuffer->GetCharsBetween (locBegin, locEnd);
   
   pBuffer->DeleteChars (iCharsToDelete);
+  pBuffer->ClearSelection ();
   
   // undoable  
   
@@ -508,6 +514,11 @@ VOID CmdSelectionCopy (RStrArray *  arrayParams)
 //-----------------------------------------------------------------------------
 VOID CmdSelectionPaste (RStrArray *  arrayParams)
   {
+  SelectionDelete ();
+  ASSERT (pGapBufferManager != NULL);
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  RStr &  strClip = pSettings->GetClip ();
+  pBuffer->InsertString(strClip.AsChar ());
   };
 
 //-----------------------------------------------------------------------------
