@@ -332,6 +332,13 @@ class RegEx
     RStr  Match      (const RStr &  strSourceIn,
                       INT32         iSearchStartIn = 0,
                       RStrArray *   pstraSubstringsOut = NULL);
+
+    VOID  Match      (const char *    szSourceIn,
+                      INT32           iSourceLengthIn,
+                      INT32           iSearchStartIn,
+                      const char * *  szMatchStartOut,
+                      INT32 &         iMatchSizeOut,          
+                      RStrArray *     pstraSubstringsOut = NULL);
                    
     RStr  Substitute (RStr          strSourceIn,
                       RStr          strReplaceIn);

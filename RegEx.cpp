@@ -602,24 +602,49 @@ VOID  RegEx::Set  (RStr     strExprIn,
     };
   };
 
-
 //------------------------------------------------------------------------
 RStr  RegEx::Match  (const RStr &  strSourceIn,
-                      INT32         iSearchStartIn,
-                      RStrArray *   pstraSubstringsOut)
+                     INT32         iSearchStartIn,
+                     RStrArray *   pstraSubstringsOut)
+  {
+  RStr         strReturn("");
+  const char * pszMatch;
+  INT32        iMatchLength;
+  
+  Match (strSourceIn.AsChar(), 
+         strSourceIn.GetLength(), 
+         iSearchStartIn,
+         &pszMatch,
+         iMatchLength,
+         pstraSubstringsOut);
+  if (iMatchLength > 0)
+    {
+    strReturn.AppendChars (pszMatch, iMatchLength);
+    };
+  return (strReturn);
+  };
+  
+//------------------------------------------------------------------------
+VOID  RegEx::Match  (const char *    szSourceIn,
+                     INT32           iSourceLengthIn,
+                     INT32           iSearchStartIn,
+                     const char * *  szMatchStartOut,
+                     INT32 &         iMatchSizeOut,          
+                     RStrArray *     pstraSubstringsOut)
   {
   INT32         iStartMatch   = 0;
-  INT32         iMaxMatch     = strSourceIn.GetLength ();
+  INT32         iMaxMatch     = iSourceLengthIn;
   INT           iMatchState;
-  RStr          strReturn ("");
+  *szMatchStartOut = NULL;
+  iMatchSizeOut    = 0;          
   
 
-  if (strPattern.GetLength () == 0) return ("");
+  if (strPattern.GetLength () == 0) return;
   
   for (iStartMatch = iSearchStartIn; iStartMatch < iMaxMatch; ++iStartMatch)
     {
     INT           iLongestMatch = -1;
-    const char *  pszStartMatch = strSourceIn.AsChar (iStartMatch);
+    const char *  pszStartMatch = &szSourceIn[iStartMatch];
     const INT     iScan = -1;
     INT32         iPos          = iStartMatch;
 
@@ -707,11 +732,11 @@ RStr  RegEx::Match  (const RStr &  strSourceIn,
         
         arrayStates [iMatchState].IncNumMatches ();   
         }
-      else if ((iPos < iMaxMatch) && (arrayStates [iMatchState].IsMatch (strSourceIn.AsChar (iPos), pszStartMatch)))
+      else if ((iPos < iMaxMatch) && (arrayStates [iMatchState].IsMatch (&szSourceIn[iPos], pszStartMatch)))
         {
   #ifdef DEBUGMSG
   printf ("%c matches %c %s\n",
-        *(strSourceIn.AsChar (iPos)),
+        szSourceIn[iPos]),
         arrayStates [iMatchState].GetStartMatch (),
         arrayStates [iMatchState].GetTypeText ());
   printf ("%s\n",   pszStartMatch );
@@ -745,13 +770,14 @@ RStr  RegEx::Match  (const RStr &  strSourceIn,
     if (iLongestMatch > 0)
       {
       // found a successful match.  This is the leftmost one we can find, so run with it.
-      
-      strSourceIn.GetMiddle (iStartMatch, iLongestMatch - iStartMatch, strReturn);
+
+      *szMatchStartOut = &szSourceIn[iStartMatch];
+      iMatchSizeOut = iLongestMatch - iStartMatch;
+      //strSourceIn.GetMiddle (iStartMatch, iLongestMatch - iStartMatch, strReturn);
       break;
       };
     }; // for each char 
-
-  return (strReturn);
+  return;
   };
                    
 
