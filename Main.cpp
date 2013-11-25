@@ -20,6 +20,9 @@
 
 #include <stdio.h>
 #include "GapBuffer.hpp"
+#include "GapBufferManager.hpp"
+#include "NCursesShell.hpp"
+
 
 #include "Debug.hpp"
 ASSERTFILE (__FILE__)
@@ -27,7 +30,26 @@ ASSERTFILE (__FILE__)
 //-----------------------------------------------------------------------------
 int main (int argc, char *argv[])
   {
+  NCursesShell *  pShell = new NCursesShell ();
   printf ("Hello World\n");
+  
+  GapBufferManager *  pManager = new GapBufferManager;
+  pManager->CreateBuffer ("TestBuffer");
+  GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
+  gapBuffer->AllocBuffer (16);
+  gapBuffer->SetFileName ("/testBuffer.txt");
+  //gapBuffer->FillGap ();
+  //const char * szRawBuffer = gapBuffer->GetBuffer();
+
+  gapBuffer->InsertChar ('a');
+  gapBuffer->InsertString ("The quick brown \nfox jumped over\nthe two lazy dogs.");
+  
+  
+  
+  pShell->Update (gapBuffer);
+  
+  delete (pShell);
+  return (0);
   }
   
   

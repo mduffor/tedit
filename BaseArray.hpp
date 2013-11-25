@@ -203,11 +203,11 @@ class BaseArray
     INT             AllocSize               (VOID) const                           {return iAllocSize;};
     EStatus         Clear                   (VOID);
     EStatus         Remove                  (INT  iStartIndex,
-                                             INT  iNumToRemove);
+                                             INT  iNumToRemove = 1);
     EStatus         RemoveSequentialValues  (INT  iStartIndex,  // actual index
-                                             INT  iNumToRemove);
+                                             INT  iNumToRemove = 1);
     virtual EStatus Insert                  (INT  iStartIndex,
-                                             INT  iNumToInsert,
+                                             INT  iNumToInsert = 1,
                                              BOOL bDebug = 0);
     VOID            SetSizeIncrement        (INT  iNewIncrement);
     INT             SizeIncrement           (VOID) const;

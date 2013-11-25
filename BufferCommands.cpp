@@ -72,6 +72,9 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("SelectEndDoc", CmdCursorEndDoc);
   
   cmdManagerIn.AddCommand ("SelectionCut", CmdSelectionCut);
+  cmdManagerIn.AddCommand ("SelectionCopy", CmdSelectionCopy);
+  cmdManagerIn.AddCommand ("SelectionPaste", CmdSelectionPaste);
+  cmdManagerIn.AddCommand ("SelectionDelete", CmdSelectionDelete);
   };
 
 //-----------------------------------------------------------------------------
@@ -418,6 +421,7 @@ VOID CursorPrevWord (VOID)
     --locCursor.iCol;
     };
   pBuffer->SetCursor (locCursor);
+
   // not undoable  
   };
 
@@ -441,7 +445,6 @@ VOID SelectionCopy (VOID)
 
   pBuffer->ClampLocationToValidChar (locBegin);
   pBuffer->ClampLocationToValidChar (locEnd);
-    
 
   // copy selected text to clip
   pBuffer->SetCursor (locBegin);
@@ -456,8 +459,7 @@ VOID SelectionCopy (VOID)
   //printf (strClip.AsChar ());
   //printf ("\n");
   
-  // undoable  
-  
+  // not undoable  
   };
 
 //-----------------------------------------------------------------------------
@@ -493,6 +495,7 @@ VOID SelectionDelete (VOID)
   pBuffer->DeleteChars (iCharsToDelete);
   pBuffer->ClearSelection ();
   
+  // TODO: Undo
   // undoable  
   
   };
@@ -503,28 +506,32 @@ VOID CmdSelectionCut (RStrArray *  arrayParams)
   {
   SelectionCopy ();
   SelectionDelete ();
+  // TODO: Undo
   };
   
 //-----------------------------------------------------------------------------
 VOID CmdSelectionCopy (RStrArray *  arrayParams)
   {
   SelectionCopy ();
+  // TODO: Undo
   };
   
 //-----------------------------------------------------------------------------
 VOID CmdSelectionPaste (RStrArray *  arrayParams)
   {
-  SelectionDelete ();
   ASSERT (pGapBufferManager != NULL);
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  SelectionDelete ();
   RStr &  strClip = pSettings->GetClip ();
   pBuffer->InsertString(strClip.AsChar ());
-  };
+  // TODO: Undo
+  };                   
 
 //-----------------------------------------------------------------------------
 VOID CmdSelectionDelete (RStrArray *  arrayParams)
   {
   SelectionDelete ();
+  // TODO: Undo
   };
   
   

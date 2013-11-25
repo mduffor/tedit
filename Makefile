@@ -12,7 +12,7 @@ CFLAGS= -O -Wall -DLINUX -I./ -I../cppunit/include/
 DEBUGFLAGS= -g -DDEBUG
 #-ansi
 # remove symobl table and relcoation info from executable
-LDFLAGS= -s -L$(HOME)/lib
+LDFLAGS= -s -L$(HOME)/lib -lncurses
 LDFLAGSTEST= ${LDFLAGS} -lcppunit -ldl -L/usr/lib/
 #LDFLAGSTEST= ${LDFLAGS} -Wl,--no-as-needed -lcppunit
 
@@ -24,12 +24,14 @@ LDCONFIG=/sbin/ldconfig
 
 SRCS=Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
      FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp Main.cpp \
-     Command.cpp BufferCommands.cpp FormatInfo.cpp EditorSettings.cpp
+     Command.cpp BufferCommands.cpp FormatInfo.cpp EditorSettings.cpp \
+     NCursesShell.cpp SyntaxParser.cpp
 OBJS=$(SRCS:.cpp=.o)
 
 TESTSRCS=UnitMain.cpp Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RStrArray.cpp RegEx.cpp \
      FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp \
      Command.cpp BufferCommands.cpp FormatInfo.cpp EditorSettings.cpp \
+     NCursesShell.cpp SyntaxParser.cpp \
      GapBufferTest.cpp IntArrayTest.cpp CommandTest.cpp
 TESTOBJS=$(TESTSRCS:.cpp=.o)
 
