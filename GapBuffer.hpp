@@ -97,7 +97,7 @@ class GapBuffer
     const char *  GetFileName (VOID)                        {return (strFileName.AsChar ());};
 
     const char *  GetBuffer   (VOID)  {return pBuffer;};
-    
+
     EStatus       SetCursor     (Location & locIn);
     EStatus       SetCursor     (INT  iLineIn, 
                                  INT  iColIn);
@@ -118,8 +118,15 @@ class GapBuffer
     INT           GetCharAtLocation (Location & locIn);
     INT           GetCharAtLocation (INT  iLine, 
                                      INT  iCol);
+    INT           LocationToOffset  (Location & locIn);
+    INT           LocationToOffset  (INT  iLine, INT  iCol);
+                                     
     INT           GetNumChars       (VOID);
     INT           GetNumLines       (VOID);
+    INT           GetLine           (INT     iLine,
+                                     char *  pszBufferOut,
+                                     INT     iMaxBuffer);
+    
     INT           GetCharsBetween   (Location &  locOne,
                                      Location &  locTwo);
                                      
@@ -167,7 +174,8 @@ class GapBuffer
     EStatus       Load                  (VOID);
     EStatus       Save                  (VOID);
     EStatus       LoadInsert            (VOID);
-    
+
+    VOID          MoveGapToEnd          (VOID);
 };
 
 #endif // GAPBUFFER_HPP

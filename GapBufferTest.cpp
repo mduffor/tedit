@@ -252,6 +252,15 @@ void GapBufferTest::testConstructor()
   szRawBuffer = gapBuffer->GetBuffer();
   CPPUNIT_ASSERT (strncmp (&szRawBuffer[0], "abcdEFGH8901234567ijkl", 22) == 0);
   
+  // Test deletion and how line offsets update
+  gapBuffer->Clear ();
+  gapBuffer->SetCursor (1,0);
+  gapBuffer->InsertString ("abcd\nefgh\nijkl");
+  gapBuffer->SetCursor (1,4);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 3);
+  gapBuffer->DeleteChars (1);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 2);
+  
   
 //  gapBuffer->DebugPrintLineOffsets ();
   

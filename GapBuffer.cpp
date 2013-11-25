@@ -197,6 +197,7 @@ VOID GapBuffer::Resize (INT  iIncrementSizeIn)
 //-----------------------------------------------------------------------------
 EStatus  GapBuffer::SetCursor (Location &  locIn)
   {
+  //printf ("Set Cursor %d %d\n", locIn.iLine, locIn.iCol);
   locCursor = locIn;  
   ASSERT (locIn.iLine >= 1);
   ASSERT (locIn.iCol >= 0);
@@ -247,6 +248,20 @@ INT  GapBuffer::GetCharAtLocation (Location & locIn)
 //-----------------------------------------------------------------------------
 INT  GapBuffer::GetCharAtLocation (INT  iLine, INT  iCol)
   {
+  INT  iOffset = LocationToOffset (iLine, iCol);
+  if (iOffset == -1) return (-1);
+  return (pBuffer[iOffset]);
+  };
+  
+//-----------------------------------------------------------------------------
+INT  GapBuffer::LocationToOffset (Location & locIn)
+  {
+  return (LocationToOffset (locIn.iLine, locIn.iCol));
+  }
+
+//-----------------------------------------------------------------------------
+INT  GapBuffer::LocationToOffset (INT  iLine, INT  iCol)
+  {
   if (iLine > GetNumLines ())
     {
     // past end of buffer.
@@ -268,9 +283,9 @@ INT  GapBuffer::GetCharAtLocation (INT  iLine, INT  iCol)
     {
     iOffset += iGapSize;
     }
-  return (pBuffer[iOffset]);
-  };
-  
+  return (iOffset);
+  }
+
 //-----------------------------------------------------------------------------
 INT  GapBuffer::GetNumChars (VOID)
   {
@@ -293,6 +308,36 @@ VOID  GapBuffer::ClampLocationToValidChar (Location &  locInOut)
     return;
     }
   locInOut.iCol = TMin (locInOut.iCol, GetLineLength (locInOut.iLine));
+  }
+
+//-----------------------------------------------------------------------------
+INT GapBuffer::GetLine (INT     iLine,
+                        char *  pszBufferOut,
+                        INT     iMaxBuffer)
+  {
+  if (pszBufferOut == NULL) return (0);
+  INT  iStartingOffset = LocationToOffset (iLine, 0);
+  if (iStartingOffset == -1)
+    {
+    pszBufferOut[0] = '\0';
+    return (0);
+    }
+  INT  iLineLength = GetLineLength (iLine);
+  INT  iCharsToCopy = TMin (iMaxBuffer, iLineLength);
+  if ((iStartingOffset > iGapStart + iGapSize) ||
+      (iStartingOffset + iCharsToCopy <= iGapStart))
+    {
+    // line is entirely before or after the gap
+    strncpy (pszBufferOut, &pBuffer[iStartingOffset], iCharsToCopy);
+    } 
+  else 
+    {
+    // line is split across the gap
+    INT  iCharsBeforeGap = iGapStart - iStartingOffset;
+    strncpy (pszBufferOut, &pBuffer[iStartingOffset], iCharsBeforeGap);
+    strncpy (&pszBufferOut[iCharsBeforeGap], &pBuffer[iGapStart + iGapSize], iCharsToCopy - iCharsBeforeGap);
+    }
+  return (iCharsToCopy);
   }
   
 //-----------------------------------------------------------------------------
@@ -330,7 +375,7 @@ INT GapBuffer::GetCharsBetween (Location &  locOne,
     ++locSearch.iLine;
     }
   iCharsOut += locEnd.iCol - locSearch.iCol;  
-  //printf ("Mark4 %d (%d, %d) to (%d, %d)\n", iCharsOut, locSearch.iLine, locSearch.iCol, locEnd.iLine, locEnd.iCol);
+  //printf ("Mark3 %d (%d, %d) to (%d, %d)\n", iCharsOut, locSearch.iLine, locSearch.iCol, locEnd.iLine, locEnd.iCol);
   return (iCharsOut);
   };
   
@@ -422,7 +467,6 @@ VOID  GapBuffer::BeginEdit (VOID)
     };
   };
 
-  
 //-----------------------------------------------------------------------------
 INT  GapBuffer::GetLineLength  (INT  iLine)
   {
@@ -544,22 +588,44 @@ VOID  GapBuffer::ReplaceString (const char *  szStringIn)
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::DeleteChars   (INT iCountIn)
   {
+  //printf ("DeleteChars (%d)\n", (int)iCountIn);
   if (bCursorMoved)
     {
     BeginEdit ();
     }
+  INT  iDeleteStart = 0;  
+  INT  iDeleteEnd = 0;  
   if (iCountIn < 0)
     {
     iCountIn = -iCountIn;
     iCountIn = TMin (iCountIn, iGapStart);
     iGapStart -= iCountIn;
     iGapSize += iCountIn;
+    iDeleteStart = iGapStart;
     }
   else if (iCountIn > 0)
     {
     iCountIn = TMin (iCountIn, iBufferSize - iGapStart - iGapSize - 1);
+    iDeleteStart = iGapStart + iGapSize;
     iGapSize += iCountIn;
     }
+  iDeleteEnd = iDeleteStart + iCountIn;
+  // remove any deleted lines from line offsets
+  for (INT  iIndex = 0; iIndex < aiLineOffsets.Length(); ++iIndex)
+    {
+    //DBG_INFO ("Checking if %d is between %d and %d\n", aiLineOffsets [iIndex] - 1,  iDeleteStart, iDeleteEnd);
+    if (aiLineOffsets [iIndex] - 1 >= iDeleteStart)
+      {
+      while ((iIndex < aiLineOffsets.Length ()) && 
+             (aiLineOffsets [iIndex] - 1 < iDeleteEnd))
+        {
+        //printf ("Deleting line %d\n", aiLineOffsets [iIndex]);
+        aiLineOffsets.Remove (iIndex);
+        };
+      break;  
+      };
+    };
+  
   };
   
 //-----------------------------------------------------------------------------
@@ -754,5 +820,14 @@ EStatus  GapBuffer::LoadInsert  (VOID)
   CalcLineOffsets ();
   return (eStatus);
   };
-  
+
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::MoveGapToEnd  (VOID)
+  {
+  ClearSelection ();
+  INT  iLastLine = GetNumLines ();
+  SetCursor (iLastLine, GetLineLength (iLastLine));
+  BeginEdit ();
+  };
+
  
