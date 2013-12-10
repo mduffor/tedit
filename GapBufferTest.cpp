@@ -26,7 +26,9 @@ ASSERTFILE (__FILE__)
 #include "GapBuffer.hpp"
 #include "GapBufferManager.hpp"
 #include "GapBufferTest.hpp"
+#include "SyntaxParser.hpp"
 #include <string.h>
+#include <ncurses.h>
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION (GapBufferTest);
@@ -34,18 +36,18 @@ CPPUNIT_TEST_SUITE_REGISTRATION (GapBufferTest);
 
 //-----------------------------------------------------------------------------
 void GapBufferTest::setUp()
-{
-}
+  {
+  };
 
 
 //-----------------------------------------------------------------------------
 void GapBufferTest::tearDown()
-{
-}
+  {
+  };
 
 //-----------------------------------------------------------------------------
 void GapBufferTest::testConstructor()
-{
+  {
   GapBufferManager *  pManager = new GapBufferManager;
   
   pManager->CreateBuffer ("TestBuffer");
@@ -275,5 +277,109 @@ void GapBufferTest::testConstructor()
 
   
   //CPPUNIT_FAIL( "not implemented" );
-}
+  }
 
+//-----------------------------------------------------------------------------
+void GapBufferTest::testSyntaxParsing()
+  {
+  // setup
+  GapBufferManager *  pManager = new GapBufferManager;
+  
+  pManager->CreateBuffer ("TestBuffer");
+  GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
+  
+  gapBuffer->AllocBuffer (16);
+  gapBuffer->FillGap ();
+  //const char * szRawBuffer = gapBuffer->GetBuffer();
+  
+  gapBuffer->InsertString ("normal int \"string\" \'c\' #pragma 1234 0.5678 for (int iName, ) {}  ");
+  //gapBuffer->InsertString (" #pragma 1234 0.5678 for (int iName, ) {}  ");
+  //gapBuffer->InsertString ("int norm !");
+  
+  SyntaxParser  syntaxParser;
+  
+  // testing
+  
+  const int LINE_BUFFER_LENGTH = 512;
+  static char szLine [LINE_BUFFER_LENGTH];
+  static int  szFullMarkup [LINE_BUFFER_LENGTH];  
+
+  
+  INT  iLineLength = gapBuffer->GetLine (1, szLine, LINE_BUFFER_LENGTH);
+  szLine[iLineLength] = '\0';
+  printf ("Got line: %s length: %d max %d\n", szLine, iLineLength, LINE_BUFFER_LENGTH);
+      
+  syntaxParser.MarkupLine (szLine, iLineLength, szFullMarkup);
+  
+  printf ("Test line and markup\n");
+
+  ShowMarkedUpLine (szLine, iLineLength, szFullMarkup);
+  
+  // cleanup
+  pManager->DeleteBuffer ("TestBufferRenamed");
+  gapBuffer = NULL;
+
+  delete pManager;
+  pManager = NULL;  
+  }
+  
+//-----------------------------------------------------------------------------
+VOID GapBufferTest::ShowMarkedUpLine (const char * szLine,
+                                      int          iLineLength,
+                                      int *        aiFullMarkupIn)
+  {
+  // display the line  
+  printf ("%s\n", szLine);
+  for (INT  iCol = 0; iCol < iLineLength; ++iCol)
+    {
+    INT  charOut = '.';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_WHITE)) charOut = 'w';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_CYAN)) charOut = 'c';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_RED)) charOut = 'r';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_GREEN)) charOut = 'g';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_MAGENTA)) charOut = 'm';
+    if ((aiFullMarkupIn[iCol] & COLOR_PAIR (0x07)) == COLOR_PAIR (COLOR_BLACK)) charOut = 'k';
+
+    if (aiFullMarkupIn[iCol] & A_BOLD) charOut = toupper(charOut);
+
+    printf("%c", charOut);
+    }
+  printf ("\n");
+  }
+  
+//-----------------------------------------------------------------------------
+VOID GapBufferTest::testSyntaxParsing2 ()
+  {
+  GapBufferManager *  pManager = new GapBufferManager;
+  
+  pManager->CreateBuffer ("TestBuffer");
+  GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
+  
+  gapBuffer->AllocBuffer (256);
+  gapBuffer->SetFileName ("./SyntaxTest.txt");
+  gapBuffer->Load ();
+  gapBuffer->FillGap ();
+  
+  SyntaxParser  syntaxParser;
+  
+  int  iTopLine = 0;
+  int  iMaxLine = gapBuffer->GetNumLines () - 1;
+  const int LINE_BUFFER_LENGTH = 512;
+  static char szLine [LINE_BUFFER_LENGTH];
+  static int  szFullMarkup [LINE_BUFFER_LENGTH];
+  
+  // move to the starting point in the buffer
+  for (INT  iScreenLine = 0; iScreenLine < iMaxLine; ++iScreenLine)
+    {
+    // determine if we are in a comment
+    
+    //printf ("Processing line %d of %d\n", iScreenLine, iMaxLine);
+    INT  iLineLength = gapBuffer->GetLine (iScreenLine + iTopLine + 1, szLine, LINE_BUFFER_LENGTH);
+    szLine[iLineLength] = '\0';
+
+    syntaxParser.MarkupLine (szLine, iLineLength, szFullMarkup);
+    ShowMarkedUpLine (szLine, iLineLength, szFullMarkup);
+    }
+  };
+  
+  

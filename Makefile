@@ -32,7 +32,7 @@ TESTSRCS=UnitMain.cpp Types.cpp Debug.cpp RStr.cpp BaseArray.cpp IntArray.cpp RS
      FilePath.cpp  RStrParser.cpp GapBuffer.cpp GapBufferManager.cpp \
      Command.cpp BufferCommands.cpp FormatInfo.cpp EditorSettings.cpp \
      NCursesShell.cpp SyntaxParser.cpp \
-     GapBufferTest.cpp IntArrayTest.cpp CommandTest.cpp
+     GapBufferTest.cpp IntArrayTest.cpp CommandTest.cpp RegExTest.cpp
 TESTOBJS=$(TESTSRCS:.cpp=.o)
 
 
@@ -50,11 +50,11 @@ all: ${PROGNAME} $(PROGNAME)_test
 #	@echo "Testing all\n"
 #	@echo $(OBJS)
 	@echo "\n\nUnit Testing\n"
-	@${PROGNAME}_test
+	@./${PROGNAME}_test
 
 test: ${PROGNAME}_test
 	@echo "\n\nUnit Testing\n"
-	${PROGNAME}_test
+	./${PROGNAME}_test
 
 # get things out of CVS
 #$(SRCS):
@@ -89,6 +89,9 @@ cleandocs:
 	rm -rf docs/
 docs:
 	doxygen Doxyfile > doxygen.log
+
+debug:
+	@$(MAKE) CFLAGS='$(CFLAGS) $(DEBUGFLAGS)' LIBS='$(LIBS) $(DEBUGLIBS)'
 
 install:
 	$(INSTALL) -m 0775 -g $GROUP -o $OWNER $(PROGNAME) ${HOME}/lib/$(PROGNAME)

@@ -27,6 +27,8 @@ class GapBufferTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE( GapBufferTest );
   CPPUNIT_TEST( testConstructor );
+  CPPUNIT_TEST( testSyntaxParsing );
+//  CPPUNIT_TEST( testSyntaxParsing2 );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -34,7 +36,12 @@ public:
   void tearDown();
 
   void testConstructor();
-  
+  void testSyntaxParsing();
+  void testSyntaxParsing2();
+
+  VOID ShowMarkedUpLine (const char * szLine,
+                         int          iLineLength,
+                         int *        aiFullMarkupIn);
 };
 
 

@@ -30,25 +30,34 @@ ASSERTFILE (__FILE__)
 //-----------------------------------------------------------------------------
 int main (int argc, char *argv[])
   {
-  NCursesShell *  pShell = new NCursesShell ();
   printf ("Hello World\n");
   
   GapBufferManager *  pManager = new GapBufferManager;
   pManager->CreateBuffer ("TestBuffer");
   GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
-  gapBuffer->AllocBuffer (16);
-  gapBuffer->SetFileName ("/testBuffer.txt");
-  //gapBuffer->FillGap ();
-  //const char * szRawBuffer = gapBuffer->GetBuffer();
+  
+  gapBuffer->AllocBuffer (256);
+  gapBuffer->SetFileName ("./SyntaxTest.txt");
+  gapBuffer->Load ();
+  gapBuffer->FillGap ();
+  gapBuffer->SetCursor(10, 3);
+  
+  //gapBuffer->InsertString ("The quick brown fox.\n");
 
-  gapBuffer->InsertChar ('a');
-  gapBuffer->InsertString ("The quick brown \nfox jumped over\nthe two lazy dogs.");
+  
+  const char * szRawBuffer = gapBuffer->GetBuffer();
+  
+  //printf ("%s\n", szRawBuffer);
+  //printf ("Line Length 0: %d\n", gapBuffer->GetLineLength(0));
+  //printf ("Line Length 1:  %d\n", gapBuffer->GetLineLength(1));
+  
+  //gapBuffer->DebugPrintLineOffsets ();
   
   
-  
+  NCursesShell *  pShell = new NCursesShell ();
   pShell->Update (gapBuffer);
-  
   delete (pShell);
+  
   return (0);
   }
   

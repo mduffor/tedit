@@ -107,6 +107,10 @@ class SyntaxParser
                                   INT &         iNumCharsReadOut);
     
     SyntaxGroup *  CreateTestCPPGroup (VOID);
+
+    VOID           MarkupLine         (const char * szLine,
+                                       int          iLineLength,
+                                       int *        aiMarkupOut)    ;
     
   };  
   
