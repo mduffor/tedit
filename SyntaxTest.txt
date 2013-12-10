@@ -1,0 +1,45 @@
+// This is a test of the C++ syntax parsing.
+/* 
+ * This is a block comment
+ * 
+ * */
+
+#ifndef TEST_DEF
+  #define TEST_DEF
+#endif
+
+//------------------------------------------------------------------------
+INT32  ClassName::FunctionName  (int           intVar,
+                                 unsigned int  uintVar,
+                                 float         floatVar,
+                                 double        doubleVar)
+  {
+  float            fTestFloat = 0.345f;
+  UINT32           uNumReplaced = 0;
+  UINT32           uEnd = (uEndIn != 0) ? uEndIn : uStringLength;
+  RStr             strTest ("This is a const string");
+
+  int loopCounter = 0;
+  while (loopCounter < 5)
+    {
+    ++loopCounter;
+    }
+  
+  for (int index = 0; index < size, ++index)
+    {
+    uCharCurr = UINT32 (((UCHAR *) pszBuffer) [index]);
+    
+    if (uCharCurr == kESCAPE)
+      {
+      switch (uCharCurr)
+        {
+        case 'a':  {uCharCurr = '\a'; break;};
+        case 'b':  {uCharCurr = '\b'; break;};
+        case '0':  {uCharCurr = '\0'; break;};
+        default:   break;
+        };
+      };
+    };
+    
+  return (INT32 (uNumReplaced));
+  };

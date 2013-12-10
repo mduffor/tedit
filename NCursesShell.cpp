@@ -35,6 +35,17 @@ NCursesShell::NCursesShell ()
   raw ();      // disable line buffering
   keypad (stdscr, TRUE); // enable function keys
   noecho ();             // don't echo characters; we will display them ourself
+  
+  INT  iBGColor = COLOR_BLACK;
+  start_color ();
+  init_pair (1, COLOR_RED, iBGColor);
+  init_pair (2, COLOR_GREEN, iBGColor);
+  init_pair (3, COLOR_YELLOW, iBGColor);
+  init_pair (4, COLOR_BLUE, iBGColor);
+  init_pair (5, COLOR_MAGENTA, iBGColor);
+  init_pair (6, COLOR_CYAN, iBGColor);
+  init_pair (7, COLOR_WHITE, iBGColor);
+  
   };          
 
 //-----------------------------------------------------------------------------
@@ -46,14 +57,19 @@ NCursesShell::~NCursesShell ()
 //-----------------------------------------------------------------------------
 VOID NCursesShell::Update (GapBuffer *  pBuffer)
   {
+  printf ("NCursesShell::Update ()\n");
+  
   if (pBuffer == NULL)
     {
     // no buffer.  Error
     return;
     };
-  SyntaxParser  syntaxParser;
-  
-  printw ("Testing ncurses.  Press a key to see it in bold. \n");
+  int  iRowMax = 0;
+  int  iColMax = 0;
+  getmaxyx (stdscr, iRowMax, iColMax);
+    
+    
+  printw ("Testing ncurses (%dx%d).  Press a key to see it in bold. \n", iColMax, iRowMax);
   int ch = getch();
   if (ch == KEY_F(1))
     {
@@ -67,78 +83,124 @@ VOID NCursesShell::Update (GapBuffer *  pBuffer)
     attroff(A_BOLD);
     }
    
-   int  iRowMax = 0;
-   int  iColMax = 0;
-   getmaxyx (stdscr, iRowMax, iColMax);
-   
-   move(0,0);
-   // addch (ch | A_BOLD | A_UNDERLINE);
-   
-   int  iTopLine = 0;
-   int  iTopCol = 0;
-   int  iMaxLine = pBuffer->GetNumLines () - 1;
-   const int LINE_BUFFER_LENGTH = 512;
-   static char szLine [LINE_BUFFER_LENGTH];
-   static int  szFullMarkup [LINE_BUFFER_LENGTH];
-   
-   // move to the starting point in the buffer
-   
-   // step through each line to display
-   for (INT  iScreenLine = 0; iScreenLine < iRowMax; ++iScreenLine)
-     {
-     // determine if we are in a comment
-     
-     // check and see if we are on a valid buffer line
-     if (iScreenLine + iTopLine <= iMaxLine)
-       {
-       INT  iLineLength = pBuffer->GetLine (iScreenLine + iTopLine, szLine, LINE_BUFFER_LENGTH);
-       
-       // parse the syntax of the line
-       INT  iIndex = 0;
-       while (iIndex < iLineLength)
-         {
-         // skip whitespace
-         if ((szLine[iIndex] == ' ') || (szLine[iIndex] == '\t'))
-           {
-           while ((szLine[iIndex] == ' ') || (szLine[iIndex] == '\t'))
-             {
-             szFullMarkup[iIndex] = (int)szLine[iIndex];
-             ++iIndex;
-             }
-           continue;
-           }
-         // parse character
-         INT  iNumCharsParsed = 0;
-         INT  iAttr = syntaxParser.Parse (&szLine[iIndex], iLineLength - iIndex, iNumCharsParsed);
-         for (INT  iAttrIndex = 0; iAttrIndex < iNumCharsParsed; ++iAttrIndex)
-           {
-           szFullMarkup[iIndex] = szLine[iIndex] | iAttr;
-           };
-           
-         };
-         
-       // display the line  
-         
-       }
-     }
-     
-   refresh();
-   getch();
+
+  
+  //move(0,0);
+  // addch (ch | A_BOLD | A_UNDERLINE);
+  
+  
+  DisplayWindow (5, 5,
+                 30, 20, // iColMax, iRowMax, 
+                 pBuffer);
+    
+  refresh();
+  getch();
+  };
+
+//-----------------------------------------------------------------------------
+INT  NCursesShell::NumDigits (INT  iValueIn)
+  {
+  INT  iCounter = 1;
+  INT  iNumDigits = 0;
+  while (iValueIn >= iCounter) 
+    {
+    ++iNumDigits;
+    iCounter *= 10;
+    }
+  return (iNumDigits);
+  }
+
+  
+//-----------------------------------------------------------------------------
+VOID NCursesShell::DisplayWindow (INT          iScreenX, 
+                                  INT          iScreenY,
+                                  INT          iWidth,
+                                  INT          iHeight, 
+                                  GapBuffer *  pBuffer)
+  {
+  SyntaxParser  syntaxParser;
+
+  Location  locCursor = pBuffer->GetCursor();
+  int  iBufferLine = 0;
+  int  iTopLine = 0;
+  int  iTopCol = 0;
+  INT  iScreenCol = 0;
+  int  iMaxLine = pBuffer->GetNumLines () - 1;
+  const int LINE_BUFFER_LENGTH = 512;
+  static char szLine [LINE_BUFFER_LENGTH];
+  static int  szFullMarkup [LINE_BUFFER_LENGTH];
+  
+  if (bShowLineNumbers) 
+    {
+    INT  iMaxLineDigits = NumDigits (iMaxLine);
+    for (INT  iScreenLine = 0; iScreenLine < iHeight; ++iScreenLine)
+      {
+      iBufferLine = iScreenLine + iTopLine + 1;
+      if (iBufferLine < iMaxLine)
+        {
+        move(iScreenLine + iScreenY,iScreenX);
+        
+        INT  iCurrDigits  = NumDigits (iBufferLine);
+        INT  iCurrPadding = iMaxLineDigits - iCurrDigits;
+        INT  iDivisor = 1;
+        while (iCurrDigits > 1)
+          {
+          iDivisor *= 10;
+          --iCurrDigits;
+          };
+        // padding
+        for (; iCurrPadding > 0; --iCurrPadding)
+          {
+          addch (' ' | COLOR_PAIR(COLOR_WHITE) | A_REVERSE);
+          }
+        // line number
+        INT  iDigit;
+        for (; iDivisor > 0; iDivisor /= 10)
+          {
+          iDigit = iBufferLine / iDivisor;
+          iBufferLine -= iDigit * iDivisor;
+          addch (('0' + iDigit) | COLOR_PAIR(COLOR_WHITE) | A_REVERSE);
+          }
+        // marking column  (TODO)
+        addch (' ' | COLOR_PAIR(COLOR_WHITE) | A_REVERSE);
+        }
+        
+      }
+    iScreenX += iMaxLineDigits + 1;
+    iWidth -= iMaxLineDigits + 1;
+    }
+  
+  // move to the starting point in the buffer
+  //printf ("Processing buffer with %d lines on a screen sized %d x %d\n\n", iMaxLine, iHeight, iWidth);
+  // step through each line to display
+  for (INT  iScreenLine = iScreenY; iScreenLine < (iScreenY + iHeight); ++iScreenLine)
+    {
+    // determine if we are in a comment
+    
+    iBufferLine = iScreenLine + iTopLine + 1;
+    
+    // check and see if we are on a valid buffer line
+    if (iBufferLine < iMaxLine)
+      {
+      INT  iLineLength = pBuffer->GetLine (iBufferLine, szLine, LINE_BUFFER_LENGTH);
+      szLine [iLineLength] = '\0';
+      syntaxParser.MarkupLine (szLine, iLineLength, szFullMarkup);
+      
+      // display the line  
+      iScreenCol = 0;
+      move(iScreenLine,iScreenX);
+      for (; (iTopCol + iScreenCol < iLineLength) && (iScreenCol < iWidth); ++iScreenCol)
+        {
+        addch (szFullMarkup[iTopCol + iScreenCol]);
+        }
+      for (; iScreenCol < iWidth; ++iScreenCol)
+        {
+        addch (' ');
+        }
+      }
+    }
+
+  // move the ncurses cursor to our gap buffer cursor location
+  move(locCursor.iLine + iScreenY - iTopLine - 1, locCursor.iCol + iScreenX - iTopCol);
   };
   
-/*
-// Syntax parsing
-
-
-  word
-  reserved word
-  syntax
-  comment
-  number
-  quote string
-  escaped char in quote string
-  preprocessor directive
-
-
-
-*/

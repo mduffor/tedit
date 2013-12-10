@@ -29,12 +29,21 @@ class NCursesShell
 {
   private:
   
+    BOOL  bShowLineNumbers = TRUE;
   
   public:
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update (GapBuffer *  pBuffer);
+    VOID Update         (GapBuffer *  pBuffer);
+
+    INT  NumDigits      (INT  iValueIn);
+
+    VOID DisplayWindow  (INT          iScreenX, 
+                         INT          iScreenY,
+                         INT          iWidth,
+                         INT          iHeight, 
+                         GapBuffer *  pBuffer);
     
 };  
   
