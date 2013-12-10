@@ -906,7 +906,7 @@ VOID  RStrParser::GetBracketString  (RStr &  strOut,
       {
       uCharCurr = PeekChar ();
       SkipChars (1);
-      if (uCharCurr == strCloseBracket [iSearch])
+      if (uCharCurr == strCloseBracket [(UINT32)iSearch])
         {
         break;
         };
