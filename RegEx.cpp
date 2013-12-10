@@ -56,16 +56,18 @@ RegExMatch::RegExMatch  ()
   iMinMatches = -1;
   iMaxMatches = -1;
   iNumMatches = 0;
+  
+  bParsingError = FALSE;
   };
 
 
 //------------------------------------------------------------------------
 RegExMatch::RegExMatch  (EType  eMatchTypeIn,
-                           UINT   uMatchStartIn,
-                           UINT   uMatchEndIn,
-                           INT    iNextOneIn,
-                           INT    iNextTwoIn,
-                           BOOL   bInvertMatchIn)
+                         UINT   uMatchStartIn,
+                         UINT   uMatchEndIn,
+                         INT    iNextOneIn,
+                         INT    iNextTwoIn,
+                         BOOL   bInvertMatchIn)
   {
   eMatchType   = eMatchTypeIn;
   uStartMatch  = uMatchStartIn;
@@ -73,32 +75,71 @@ RegExMatch::RegExMatch  (EType  eMatchTypeIn,
   iNextOne     = iNextOneIn;
   iNextTwo     = iNextTwoIn;
   bInvertMatch = bInvertMatchIn;
+  bParsingError = FALSE;
   };
 
+  
+//------------------------------------------------------------------------
+RegExMatch::RegExMatch (const RegExMatch &  matchIn)
+  {
+  eMatchType    = matchIn.eMatchType;
+  uStartMatch   = matchIn.uStartMatch;
+  uEndMatch     = matchIn.uEndMatch;
+  
+  bInvertMatch  = matchIn.bInvertMatch;
+  iNextOne      = matchIn.iNextOne;
+  iNextTwo      = matchIn.iNextTwo;
 
+  iMinMatches   = matchIn.iMinMatches;
+  iMaxMatches   = matchIn.iMaxMatches;
+  iNumMatches   = matchIn.iNumMatches;
+  
+  bParsingError = matchIn.bParsingError;
+  }; 
+
+  
+  
 //------------------------------------------------------------------------
 BOOL  RegExMatch::IsMatch   (const char *  pchIn,
-                              const char *  pchBufferStart)
+                             const char *  pchBufferStart,
+                             const char *  pchBufferEnd)
   {
+  #ifdef DEBUGMSG
+    printf ("IsMatch checking character %c\n", *pchIn);
+  #endif  
   if (bInvertMatch)
     {
-    return (! RawMatch (pchIn, pchBufferStart));
+    #ifdef DEBUGMSG
+      printf ("InvertedMatch\n");
+    #endif
+    return (! RawMatch (pchIn, pchBufferStart, pchBufferEnd));
     }
   else
     {
-    return (RawMatch (pchIn, pchBufferStart));
+    return (RawMatch (pchIn, pchBufferStart, pchBufferEnd));
     };
   };
 
 
 //------------------------------------------------------------------------
 BOOL  RegExMatch::RawMatch   (const char *  pchIn,
-                               const char *  pchBufferStart)
+                              const char *  pchBufferStart,
+                              const char *  pchBufferEnd)
   {
+  if (pchIn == pchBufferEnd)
+    {
+    // end of buffer.  Only line end matches
+    return (eMatchType == kLineEnd);
+    };
+  
   switch (eMatchType)
     {
     case kAnyChar:      {return TRUE;};
-    case kChar:         {return (UINT (*pchIn) == uStartMatch);}; 
+    case kChar:         {
+                         #ifdef DEBUGMSG
+                         printf ("matching %c on char %c\n", UINT (*pchIn), uStartMatch);
+                         #endif
+                         return (UINT (*pchIn) == uStartMatch);}; 
     case kCharRange:    {return ((UINT (*pchIn) >= uStartMatch) &&
                                  (UINT (*pchIn) <= uEndMatch));}; 
     case kAlnum:        {return (isalnum  (int (*pchIn)));}; 
@@ -136,6 +177,13 @@ BOOL  RegExMatch::RawMatch   (const char *  pchIn,
 //------------------------------------------------------------------------
 BOOL  RegExMatch::IncOnMatch  (VOID)
   {
+  if (bInvertMatch)
+    {
+    // negative matches occur in a list.  We want to process these as a non-incrementing
+    // sequence of character matches, rather than a branching tree of matches.
+    return (FALSE);
+    }
+  
   switch (eMatchType)
     {
     case kAnyChar:
@@ -194,12 +242,18 @@ BOOL  RegExMatch::IsWordChar  (const char *  pchIn)
   return (FALSE);  
   };
 
-
+//------------------------------------------------------------------------
+BOOL  RegExMatch::MatchOnLineEnd  (VOID)
+  {
+  return ((eMatchType == kLineEnd) ||
+          (eMatchType == kWordEnd) ||
+          (eMatchType == kWordBoundary));
+  };
 
 //------------------------------------------------------------------------
-BOOL   RegExMatch::GetType  (const char *   pszPatternIn,
-                              BOOL           bInList,
-                              INT &          iSizeMatchedOut)
+BOOL  RegExMatch::GetType  (const char *   pszPatternIn,
+                            BOOL           bInList,
+                            INT &          iSizeMatchedOut)
   {
   // try to match each type
  
@@ -225,14 +279,30 @@ BOOL   RegExMatch::GetType  (const char *   pszPatternIn,
     else if (strncmp (pszPatternIn, "[:space:]",   9) == 0)  {iSizeMatchedOut =  9; eMatchType = kSpace; }
     else if (strncmp (pszPatternIn, "[:upper:]",   9) == 0)  {iSizeMatchedOut =  9; eMatchType = kUpper; }
     else if (strncmp (pszPatternIn, "[:xdigit:]", 10) == 0)  {iSizeMatchedOut = 10; eMatchType = kXDigit;}
-                   
+
+    // find chars that are valid in a list, but not outside of it.   
+    else if ((*pszPatternIn == '|') ||
+             (*pszPatternIn == '{') ||
+             (*pszPatternIn == '}') ||
+             (*pszPatternIn == '?') ||
+             (*pszPatternIn == '+') ||
+             (*pszPatternIn == '*'))
+      {
+      iSizeMatchedOut = 1;
+      uStartMatch     = *(pszPatternIn);
+      eMatchType      = kChar;
+      }
     else if (isalnum (*pszPatternIn) &&
              (*(pszPatternIn + 1) == '-') &&
              isalnum (*(pszPatternIn + 2)))
       {
       uStartMatch = *(pszPatternIn);
       uEndMatch   = *(pszPatternIn + 2);
-      
+      if (uStartMatch > uEndMatch)
+        {
+        // range values are out-of-order, larger to smaller.
+        bParsingError = TRUE;
+        };
       iSizeMatchedOut = 3;
       eMatchType      = kCharRange; 
       };
@@ -241,22 +311,9 @@ BOOL   RegExMatch::GetType  (const char *   pszPatternIn,
     {
     };
 
-  // check the chars that appear outside of lists
+  // check the chars that appear inside or outside of lists
   
   if (*pszPatternIn == '.')  {iSizeMatchedOut = 1; eMatchType = kAnyChar;}
-
-  else if (*pszPatternIn == '\\')
-    {
-
-  #ifdef DEBUGMSG
-  printf ("Escaping character %c\n", *(pszPatternIn + 1));
-  #endif
-
-    // escaped char
-    iSizeMatchedOut = 2;
-    uStartMatch     = *(pszPatternIn + 1);
-    eMatchType      = kChar;
-    }
 
   else if (strncmp (pszPatternIn, "\\b", 2) == 0)  {iSizeMatchedOut = 2; eMatchType = kWordBoundary;}
   else if (strncmp (pszPatternIn, "\\B", 2) == 0)  {iSizeMatchedOut = 2; eMatchType = kWordInside  ;}
@@ -266,25 +323,44 @@ BOOL   RegExMatch::GetType  (const char *   pszPatternIn,
   else if (strncmp (pszPatternIn, "\\W", 2) == 0)  {iSizeMatchedOut = 2; eMatchType = kNotWordChar ;}
   else if (strncmp (pszPatternIn, "\\`", 2) == 0)  {iSizeMatchedOut = 2; eMatchType = kBufferStart ;}
   else if (strncmp (pszPatternIn, "\\'", 2) == 0)  {iSizeMatchedOut = 2; eMatchType = kBufferEnd   ;}
+  else if (*pszPatternIn == '\\')
+    {
+
+    #ifdef DEBUGMSG
+      printf ("Escaping character %c\n", *(pszPatternIn + 1));
+    #endif
+
+    // escaped char
+    iSizeMatchedOut = 2;
+    uStartMatch     = *(pszPatternIn + 1);
+    eMatchType      = kChar;
+    }
+
 
   else if (strncmp (pszPatternIn, "^",   1) == 0)  {iSizeMatchedOut = 1; eMatchType = kLineStart   ;}
   else if (strncmp (pszPatternIn, "$",   1) == 0)  {iSizeMatchedOut = 1; eMatchType = kLineEnd     ;}
     
   else if ((*pszPatternIn != '(') &&
            (*pszPatternIn != ')') &&
+           (*pszPatternIn != '|') &&
            (*pszPatternIn != '[') &&
            (*pszPatternIn != ']') &&
            (*pszPatternIn != '{') &&
            (*pszPatternIn != '}') &&
            (*pszPatternIn != '?') &&
            (*pszPatternIn != '+') &&
-           (*pszPatternIn != '*'))
+           (*pszPatternIn != '*') &&
+           (eMatchType == kNull))
     {
     iSizeMatchedOut = 1;
     uStartMatch     = *(pszPatternIn);
     eMatchType      = kChar;
     };
 
+  #ifdef DEBUGMSG
+  printf ("eMatchType found to be %s for %s \n", GetTypeText(), pszPatternIn);
+  #endif
+    
   return (eMatchType != kNull);
   };
 
@@ -592,14 +668,15 @@ RegEx::RegEx  (const char *  pszExprIn,
 
 
 //------------------------------------------------------------------------
-VOID  RegEx::Set  (RStr     strExprIn,
+EStatus  RegEx::Set  (RStr     strExprIn,
                    EParser  eParseType)
   {
   switch (eParseType)
     {
-    case kRegEx:  ParseRegEx (strExprIn); break;
-    case kGlob:   ParseGlob  (strExprIn); break;
+    case kRegEx:  return ParseRegEx (strExprIn); 
+    case kGlob:   return ParseGlob  (strExprIn); 
     };
+  return (EStatus::kFailure);
   };
 
 //------------------------------------------------------------------------
@@ -637,11 +714,15 @@ VOID  RegEx::Match  (const char *    szSourceIn,
   INT           iMatchState;
   *szMatchStartOut = NULL;
   iMatchSizeOut    = 0;          
-  
 
+  #ifdef DEBUGMSG
+    printf ("\n");
+  #endif    
+  
+  
   if (strPattern.GetLength () == 0) return;
   
-  for (iStartMatch = iSearchStartIn; iStartMatch < iMaxMatch; ++iStartMatch)
+  for (iStartMatch = iSearchStartIn; iStartMatch <= iMaxMatch; ++iStartMatch)
     {
     INT           iLongestMatch = -1;
     const char *  pszStartMatch = &szSourceIn[iStartMatch];
@@ -667,12 +748,18 @@ VOID  RegEx::Match  (const char *    szSourceIn,
       {
       if (iMatchState == iScan)
         {
+        #ifdef DEBUGMSG
+          printf ("Rex: match == scan %d\n", iMatchState);
+        #endif
         // We read the scan value off the queue.  move to next character
         iPos = iPos + 1;
         deque.Put (iScan);
         }
       else if ((arrayStates [iMatchState].IsNull ()) && (iMatchState != 0))
         {
+        #ifdef DEBUGMSG
+          printf ("Rex: isNull %d\n", iMatchState);
+        #endif
         if (! deque.InQueueHead (arrayStates [iMatchState].GetNextOne ()))
           {
           deque.Push (arrayStates [iMatchState].GetNextOne ());
@@ -680,6 +767,9 @@ VOID  RegEx::Match  (const char *    szSourceIn,
         }
       else if (arrayStates [iMatchState].IsOr ())
         {
+        #ifdef DEBUGMSG
+          printf ("Rex: isOr %d\n", iMatchState);
+        #endif
         if (! deque.InQueueHead (arrayStates [iMatchState].GetNextOne ()))
           {
           deque.Push (arrayStates [iMatchState].GetNextOne ());
@@ -692,6 +782,9 @@ VOID  RegEx::Match  (const char *    szSourceIn,
         }
       else if (arrayStates [iMatchState].IsRepeat ())
         {
+        #ifdef DEBUGMSG
+          printf ("Rex: isRepeat %d\n", iMatchState);
+        #endif
         // The first branch is the continue state.  The second is the repeat state.
         
         // Note: Check for iterations here.  To be implemented.
@@ -732,16 +825,20 @@ VOID  RegEx::Match  (const char *    szSourceIn,
         
         arrayStates [iMatchState].IncNumMatches ();   
         }
-      else if ((iPos < iMaxMatch) && (arrayStates [iMatchState].IsMatch (&szSourceIn[iPos], pszStartMatch)))
+      else if (((iPos == iMaxMatch) && (arrayStates [iMatchState].MatchOnLineEnd ())) ||
+               ((iPos < iMaxMatch)  && (arrayStates [iMatchState].IsMatch (&szSourceIn[iPos], szSourceIn, &szSourceIn[iSourceLengthIn]))))
         {
-  #ifdef DEBUGMSG
-  printf ("%c matches %c %s\n",
-        szSourceIn[iPos]),
-        arrayStates [iMatchState].GetStartMatch (),
-        arrayStates [iMatchState].GetTypeText ());
-  printf ("%s\n",   pszStartMatch );
-  #endif
-        
+        #ifdef DEBUGMSG
+        if (iPos < iMaxMatch)
+          {
+          printf ("Rex: isMatch  %c matches %c %s\n",
+                (int)szSourceIn[iPos],
+                (int)arrayStates [iMatchState].GetStartMatch (),
+                arrayStates [iMatchState].GetTypeText ());
+          printf ("%s\n",   pszStartMatch );
+          }
+        #endif
+       
         if (arrayStates [iMatchState].IncOnMatch ())
           {
           if (! deque.InQueueTail (arrayStates [iMatchState].GetNextOne ()))
@@ -759,9 +856,16 @@ VOID  RegEx::Match  (const char *    szSourceIn,
         }
       iMatchState = deque.Pop ();
 
+      #ifdef DEBUGMSG
+        printf ("Match State %d\n", iMatchState);
+      #endif
       if (iMatchState == 0)
         {
         // found a match
+        #ifdef DEBUGMSG
+          printf ("found match at %d\n", (int)iPos);
+        #endif
+        
         iLongestMatch = iPos;
         };
       }
@@ -770,6 +874,9 @@ VOID  RegEx::Match  (const char *    szSourceIn,
     if (iLongestMatch > 0)
       {
       // found a successful match.  This is the leftmost one we can find, so run with it.
+      #ifdef DEBUGMSG
+        printf ("Found match size %d start %d char %c\n", (int)iLongestMatch, (int)iStartMatch, szSourceIn[iStartMatch]); 
+      #endif
 
       *szMatchStartOut = &szSourceIn[iStartMatch];
       iMatchSizeOut = iLongestMatch - iStartMatch;
@@ -786,11 +893,16 @@ VOID  RegEx::Debug (VOID)
   {
   INT  iMax = arrayStates.Length ();
   
+  printf("\n");
   for (iState = 0; iState < iMax; ++iState)
     {
-    printf ("%4d %12s %c %3d %3d\n", int (iState),
+    int  iChar = arrayStates [iState].GetStartMatch ();
+    if ((iChar < 32) || (iChar > 127)) {iChar = ' ';};
+    
+    printf ("%4d %12s %3c (%3d) %3d %3d\n", int (iState),
                                      arrayStates [iState].GetTypeText (), 
-                                     char (arrayStates [iState].GetStartMatch ()), 
+                                     char (iChar), 
+                                     iChar,
                                      arrayStates [iState].GetNextOne (),
                                      arrayStates [iState].GetNextTwo ());
     };
@@ -807,25 +919,34 @@ RStr  RegEx::Substitute  (RStr  strSourceIn,
 
 
 //------------------------------------------------------------------------
-VOID  RegEx::ParseRegEx (RStr  strExprIn)
+EStatus  RegEx::ParseRegEx (RStr  strExprIn)
   {
   arrayStates.Clear ();
   
   iState = 1;
   iPatternPos = 0;
+  strPattern.Reset();
   strPattern = strExprIn;
+  bParsingError = FALSE;
+  iNumParenthesis = 0;
  
   INT  iStartIndex = RegExExpression ();
+ 
+  if ((iStartIndex == -1) || (bParsingError))
+    {
+    return (EStatus::kFailure);
+    }
  
   arrayStates [0] = RegExMatch  (RegExMatch::kNull, 0, 0, iStartIndex, -1);
 
   // the last state needs to be the null which signifies the end has been reached.
   arrayStates [iState] = RegExMatch  (RegExMatch::kNull, 0, 0, 0, 0);
+  return (EStatus::kSuccess);
   };
 
 
 //------------------------------------------------------------------------
-VOID  RegEx::ParseGlob  (RStr  strExprIn)
+EStatus  RegEx::ParseGlob  (RStr  strExprIn)
   {
   arrayStates.Clear ();
   
@@ -865,6 +986,7 @@ VOID  RegEx::ParseGlob  (RStr  strExprIn)
     ++iState;
     };
   arrayStates [iState] = RegExMatch  (RegExMatch::kNull, 0, 0, 0, 0);
+  return (EStatus::kSuccess);
   };
 
 
@@ -908,14 +1030,14 @@ INT  RegEx::RegExTerm  (BOOL  bNegativeMatchIn)
   //  recursively set up.
   
   iReturn = RegExFactor (bNegativeMatchIn);
-
+  
   // Factors are always set up so that the next state is the exit from this state.  So factors
   //  that exist one after the other should all line up correctly.
 
-  while ((iNewReturn = RegExFactor (bNegativeMatchIn)) != -1)
+  while ((iNewReturn = RegExFactor (bNegativeMatchIn)) >= 0)
     {
     };
-
+    
   // return the entrance of the first factor.
   return (iReturn);  
   };
@@ -926,6 +1048,7 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
   {
   BOOL  bNegativeMatch;
   
+  INT   iGroupStart = -1;
   INT   iBranchOne = iState;
   INT   iBranchTwo = -1;
   INT   iReturn = -1;
@@ -936,12 +1059,21 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
   // handle groups
   if (strPattern [iPatternPos] == '(')
     {
+    iGroupStart = iState;
+    arrayStates [iGroupStart] = RegExMatch  (RegExMatch::kNull, 0, 0, -1, -1);
+    ++iState;
+    
+    ++iNumParenthesis;
     ++iPatternPos;
     // Note:  You need to handle beginning sub-strings here.  To be implemented
     iBranchTwo = RegExExpression (bNegativeMatchIn);
+    arrayStates [iGroupStart].SetNext (iBranchTwo, -1);
+    iBranchTwo = iGroupStart;
+    
     // close group
     if (strPattern [iPatternPos] == ')')
       {
+      --iNumParenthesis;
       // Note:  You need to handle ending sub-strings here.  To be implemented
       ++iPatternPos;
       }
@@ -964,15 +1096,29 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
       bNegativeMatch = TRUE;
       };
 
-    iBranchTwo = RegExList (bNegativeMatch);
+    // check for empty list
+    if ((iPatternPos >= strPattern.GetLength ()) || (strPattern [iPatternPos] == ']'))
+      {
+      bParsingError = TRUE;
+      }
+    if (bNegativeMatch)
+      {
+      iBranchTwo = RegExListInverted ();
+      }
+    else
+      {
+      iBranchTwo = RegExList ();
+      }
+    
     // close list
-    if (strPattern [iPatternPos] == ']')
+    if ((iPatternPos >= strPattern.GetLength ()) || (strPattern [iPatternPos] == ']'))
       {
       ++iPatternPos;
       }
     else
       {
       // Error.  List not closed
+      bParsingError = TRUE;
       return (-1);
       };
     }
@@ -988,11 +1134,12 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
     {
     // we have a character.
 
-    INT            iMatchSize;
+    INT           iMatchSize;
     RegExMatch    matchNew;
 
-    if (matchNew.GetType  (strPattern.AsChar (iPatternPos), false, iMatchSize))
+    if (matchNew.GetType (strPattern.AsChar (iPatternPos), false, iMatchSize))
       {
+      if (matchNew.IsError ()) {bParsingError = TRUE;};
       // found a new character
 
       matchNew.SetNext (iState + 1, iState + 1);
@@ -1005,13 +1152,24 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
       }
     else
       {
+      if (matchNew.IsError ()) {bParsingError = TRUE;};
       // error:  not a character, and there were no other options
       return (-1);
       };
     }
+  else if ((strPattern [iPatternPos] == ')') && (iNumParenthesis == 0))
+    {
+    // unbalanced closing parenthesis
+    bParsingError = TRUE;
+    return (-1);
+    }
   else
     {
     // error:  no factor
+    //if (strPattern [iPatternPos] != '\0')
+    //  {
+    //  printf ("No Factor %c NumParen %d : %s\n", strPattern [iPatternPos], iNumParenthesis, strPattern.AsChar());
+    //  }
     return (-1);
     };
   
@@ -1026,7 +1184,15 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
                                             
     if (strPattern [iPatternPos] == '?')  {matchNew.SetNumMatches (0, 1);};
     if (strPattern [iPatternPos] == '+')  {matchNew.SetNumMatches (1, -1);};
-    if (strPattern [iPatternPos] == '*')  {matchNew.SetNumMatches (0, -1);};
+    if (strPattern [iPatternPos] == '*')  
+      {
+      if (strPattern [iPatternPos + 1] == '*') 
+        {
+        // Catch double asterisks
+        bParsingError = TRUE;
+        };
+      matchNew.SetNumMatches (0, -1);
+      };
     
     if (strPattern [iPatternPos] == '{')
       {
@@ -1093,10 +1259,68 @@ INT  RegEx::RegExFactor  (BOOL  bNegativeMatchIn)
   };
 
 
+//------------------------------------------------------------------------
+INT  RegEx::RegExListInverted (VOID)
+  {
+  INT  iNewReturn;
+  INT  iStartState = iState;
+  INT  iMatchState = iState + 1;
+  INT  iChainStart = iState;
 
+
+  // create a null for the entrance situation (to skip the match null)
+  arrayStates [iStartState] = RegExMatch  (RegExMatch::kNull, 0, 0, iMatchState + 1, -1);
+  ++iState;
+
+  // create a null that we can target for the "match" situation
+  arrayStates [iMatchState] = RegExMatch  (RegExMatch::kNull, 0, 0, -1, -1);
+  ++iState;
+  
+  iChainStart = RegExListItemInverted ();
+  do 
+    {
+    iNewReturn = RegExListItemInverted ();
+    }
+  while (iNewReturn != -1);
+  
+  // add a final "any character" to accept the sequence if we've gotten this far
+  arrayStates [iState] = RegExMatch  (RegExMatch::kAnyChar, 0, 0, iMatchState, -1);
+  ++iState;
+  
+  // point the "match" null to the state after the chain
+  arrayStates [iMatchState].SetNextOne (iState);
+
+  return (iChainStart);  
+  };
 
 //------------------------------------------------------------------------
-INT  RegEx::RegExList (BOOL  bNegativeMatchIn)
+INT  RegEx::RegExListItemInverted (VOID)
+  {
+  INT            iMatchSize;
+  RegExMatch     matchNew;
+  
+  if (matchNew.GetType  (strPattern.AsChar (iPatternPos), true, iMatchSize))
+    {
+    if (matchNew.IsError ()) {bParsingError = TRUE;};
+    // found a new character
+
+    // add a state for the character to match.
+    matchNew.SetNext  (iState + 1, -1);
+    matchNew.InvertMatch (TRUE);
+    arrayStates [iState] = matchNew;
+    iPatternPos += iMatchSize;
+
+    // prepare for the next state.
+    ++iState;
+    return (iState - 1);
+    };
+  if (matchNew.IsError ()) {bParsingError = TRUE;};
+  
+  return (-1);  
+  }  
+  
+//------------------------------------------------------------------------
+INT  RegEx::RegExList (VOID)
   {
   INT  iLastAddedOr;
   INT  iNewReturn;
@@ -1110,20 +1334,20 @@ INT  RegEx::RegExList (BOOL  bNegativeMatchIn)
   ++iState;
 
   // create a null that we can target for the "match" situation
-  arrayStates [iMatchState] = RegExMatch  (RegExMatch::kNull, 0, 0, -1, -1, bNegativeMatchIn);
+  arrayStates [iMatchState] = RegExMatch  (RegExMatch::kNull, 0, 0, -1, -1);
   ++iState;
   
-  iLastAddedOr = iChainStart = RegExListItem (bNegativeMatchIn, iMatchState);
+  iLastAddedOr = iChainStart = RegExListItem (iMatchState);
 
-  while ((iNewReturn = RegExListItem (bNegativeMatchIn, iMatchState)) != -1)
+  while ((iNewReturn = RegExListItem (iMatchState)) != -1)
     {
     iLastAddedOr = iNewReturn;
     };
-
+    
   // point the "match" null to the state after the chain
   arrayStates [iMatchState].SetNextOne (iState);
 
-  // and turn the last Or into a null
+  // and turn the last Or into a null, so it will just move to the final list element
   arrayStates [iLastAddedOr].SetType    (RegExMatch::kNull);
   arrayStates [iLastAddedOr].SetNextTwo (-1);
 
@@ -1132,29 +1356,34 @@ INT  RegEx::RegExList (BOOL  bNegativeMatchIn)
 
 
 //------------------------------------------------------------------------
-INT  RegEx::RegExListItem (BOOL  bNegativeMatchIn,
-                            INT   iListStartState)
+INT  RegEx::RegExListItem (INT   iListStartState)
   {
   INT            iMatchSize;
-  RegExMatch    matchNew;
+  RegExMatch     matchNew;
+  INT            iOrState = -1;
 
   if (matchNew.GetType  (strPattern.AsChar (iPatternPos), true, iMatchSize))
     {
+    if (matchNew.IsError ()) {bParsingError = TRUE;};
     // found a new character
 
+    // add an "or" branch
+    arrayStates [iState] = RegExMatch  (RegExMatch::kOr,   0, 0, iState + 1, iState + 2);
+    iOrState = iState;
 
-    arrayStates [iState] = RegExMatch  (RegExMatch::kOr,   0, 0, iState + 1, iState + 2, bNegativeMatchIn);
+    // add a state for the character to match.
     ++iState;
-
     matchNew.SetNext  (iListStartState, -1);
-    matchNew.InvertMatch (bNegativeMatchIn);
     arrayStates [iState] = matchNew;
     iPatternPos += iMatchSize;
+
+    // prepare for the next state.
     ++iState;
 
-    return (iState - 2);
+    return (iOrState);
     };
-
+  if (matchNew.IsError ()) {bParsingError = TRUE;};
+  
   return (-1);
   };
 
@@ -1267,7 +1496,7 @@ VOID  RegExMatchArray::AverageValues  (INT    iIndexAverage,
 
 //-----------------------------------------------------------------------------
 VOID  RegExMatchArray::SwapIndexes  (INT  iIndexOne,
-                                      INT  iIndexTwo)
+                                     INT  iIndexTwo)
   {
   RegExMatch                    fTemp = ((RegExMatch *) pArray) [iIndexOne];
   ((RegExMatch *) pArray) [iIndexOne] = ((RegExMatch *) pArray) [iIndexTwo];
@@ -1277,7 +1506,7 @@ VOID  RegExMatchArray::SwapIndexes  (INT  iIndexOne,
   
 //-----------------------------------------------------------------------------
 INT  RegExMatchArray::CompareIndexes  (INT  iIndexOne,
-                                        INT  iIndexTwo)
+                                       INT  iIndexTwo)
   {
   // you can't compare reg ex matche entries
   return (0);
@@ -1286,7 +1515,7 @@ INT  RegExMatchArray::CompareIndexes  (INT  iIndexOne,
 
 //-----------------------------------------------------------------------------
 EStatus RegExMatchArray::Set (RegExMatch   remElement,
-                               INT           iIndex)
+                              INT          iIndex)
   {
   if (iIndex >= iLength) return (EStatus::kFailure);
   ((RegExMatch *) pArray) [iIndex] = remElement;

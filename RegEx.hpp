@@ -96,17 +96,21 @@ class RegExMatch
     INT     iMinMatches;
     INT     iMaxMatches;
     INT     iNumMatches;
+    
+    BOOL    bParsingError;
   
   public:
   
                    RegExMatch  ();
 
                    RegExMatch  (EType  eMatchTypeIn,
-                                 UINT   uMatchStartIn  = 0,
-                                 UINT   uMatchEndIn    = 0,
-                                 INT    iNextOneIn     = 0,
-                                 INT    iNextTwoIn     = 0,
-                                 BOOL   bInvertMatchIn = FALSE);
+                                UINT   uMatchStartIn  = 0,
+                                UINT   uMatchEndIn    = 0,
+                                INT    iNextOneIn     = 0,
+                                INT    iNextTwoIn     = 0,
+                                BOOL   bInvertMatchIn = FALSE);
+                    
+                   RegExMatch (const RegExMatch &  matchIn); 
                     
                    ~RegExMatch ()                            {};
   
@@ -122,10 +126,12 @@ class RegExMatch
                                                                return *this;};
 
     BOOL           IsMatch     (const char *  pchIn,
-                                const char *  pchBufferStart);
+                                const char *  pchBufferStart,
+                                const char *  pchBufferEnd);
 
     BOOL           RawMatch    (const char *  pchIn,
-                                const char *  pchBufferStart);
+                                const char *  pchBufferStart,
+                                const char *  pchBufferEnd);
     
     VOID           SetType     (EType  eMatchTypeIn,
                                 UINT   uStartMatchIn = 0x20,
@@ -149,6 +155,10 @@ class RegExMatch
     BOOL           IsOr            (VOID)                     {return (eMatchType == kOr);};
     
     BOOL           IsRepeat        (VOID)                     {return (eMatchType == kRepeat);};
+
+    BOOL           MatchOnLineEnd  (VOID);
+
+    BOOL           IsError         (VOID)                     {return (bParsingError);};
 
     VOID           SetNextOne      (INT  iNextIn)             {iNextOne = iNextIn;};
     
@@ -297,60 +307,66 @@ class RegEx
     UINT32             iPatternPos;
     INT32              iState;
     
+    BOOL               bParsingError;
+    INT                iNumParenthesis;
+                           
     
   private:
 
-    INT   RegExExpression (BOOL  bNegativeMatchIn = false);
+    INT   RegExExpression   (BOOL  bNegativeMatchIn = false);
          
-    INT   RegExTerm       (BOOL  bNegativeMatchIn);
+    INT   RegExTerm         (BOOL  bNegativeMatchIn);
          
-    INT   RegExFactor     (BOOL  bNegativeMatchIn);
+    INT   RegExFactor       (BOOL  bNegativeMatchIn);
 
-    INT   RegExList       (BOOL  bNegativeMatchIn);
+    INT   RegExListInverted (VOID);
+    
+    INT   RegExListItemInverted (VOID);
+    
+    INT   RegExList         (VOID);
 
-    INT   RegExListItem   (BOOL  bNegativeMatchIn,
-                           INT   iListStartState);
+    INT   RegExListItem     (INT   iListStartState);
 
   public:
   
   
-          RegEx     ();
+             RegEx      ();
 
-          ~RegEx    ();
+             ~RegEx     ();
 
-          RegEx     (const RegEx &  reIn);
+             RegEx      (const RegEx &  reIn);
 
-          RegEx     (RStr          strExprIn,
-                      EParser       eParseType = kRegEx);
+             RegEx      (RStr          strExprIn,
+                         EParser       eParseType = kRegEx);
 
-          RegEx     (const char *  pszExprIn,
-                      EParser       eParseType = kRegEx);
+             RegEx      (const char *  pszExprIn,
+                         EParser       eParseType = kRegEx);
 
-    VOID  Set        (RStr          strExprIn,
-                      EParser       eParseType = kRegEx);
+    EStatus  Set        (RStr          strExprIn,
+                         EParser       eParseType = kRegEx);
 
-    RStr  Match      (const RStr &  strSourceIn,
-                      INT32         iSearchStartIn = 0,
-                      RStrArray *   pstraSubstringsOut = NULL);
+    RStr     Match      (const RStr &  strSourceIn,
+                         INT32         iSearchStartIn = 0,
+                         RStrArray *   pstraSubstringsOut = NULL);
 
-    VOID  Match      (const char *    szSourceIn,
-                      INT32           iSourceLengthIn,
-                      INT32           iSearchStartIn,
-                      const char * *  szMatchStartOut,
-                      INT32 &         iMatchSizeOut,          
-                      RStrArray *     pstraSubstringsOut = NULL);
+    VOID     Match      (const char *    szSourceIn,
+                         INT32           iSourceLengthIn,
+                         INT32           iSearchStartIn,
+                         const char * *  szMatchStartOut,
+                         INT32 &         iMatchSizeOut,          
+                         RStrArray *     pstraSubstringsOut = NULL);
                    
-    RStr  Substitute (RStr          strSourceIn,
-                      RStr          strReplaceIn);
+    RStr     Substitute (RStr          strSourceIn,
+                         RStr          strReplaceIn);
 
 
-    VOID  ParseRegEx (RStr          strExprIn);
+    EStatus  ParseRegEx (RStr          strExprIn);
 
-    VOID  ParseGlob  (RStr          strExprIn);
+    EStatus  ParseGlob  (RStr          strExprIn);
 
-    VOID  Debug      (VOID);
+    VOID     Debug      (VOID);
     
-    RStr  Pattern    (VOID)        {return (strPattern);};
+    RStr     Pattern    (VOID)        {return (strPattern);};
   
   
   };
