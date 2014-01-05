@@ -53,4 +53,9 @@ RStr &  EditorSettings::GetClip   (VOID)
   return (strClipBuffer);
   };
 
-  
+//-----------------------------------------------------------------------------
+const char *  EditorSettings::GetTabString  (VOID) 
+  {
+  // TODO: Replace with tabs or spaces equal to tab size. 
+  return ("  ");
+  }

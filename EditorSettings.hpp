@@ -29,16 +29,20 @@ class EditorSettings
   {
   private:
     RStr  strClipBuffer;
+    BOOL  bInsertMode;
     
   public:
   
     EditorSettings ();
     ~EditorSettings ();
     
-    VOID          SaveClip  (const char *  szClipIn);
-    VOID          ClearClip (VOID);
-    RStr &        GetClip   (VOID);
+    VOID          SaveClip     (const char *  szClipIn);
+    VOID          ClearClip    (VOID);
+    RStr &        GetClip      (VOID);
+    const char *  GetTabString (VOID);
     
+    BOOL          IsInsertMode  (VOID)      {return bInsertMode;};
+    VOID          SetInsertMode (BOOL bIn)  {bInsertMode = bIn;};
     
   };
 

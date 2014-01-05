@@ -53,7 +53,10 @@ VOID CmdSelectStartLine (RStrArray *  arrayParams);
 VOID CmdSelectEndLine (RStrArray *  arrayParams);
 VOID CmdSelectNextWord (RStrArray *  arrayParams);
 VOID CmdSelectPrevWord (RStrArray *  arrayParams);
-  
+
+VOID CmdBackspace (RStrArray *  arrayParams);
+VOID CmdDelete    (RStrArray *  arrayParams);
+
 VOID CursorUp (VOID);
 VOID CursorDown (VOID);
 VOID CursorLeft (VOID);

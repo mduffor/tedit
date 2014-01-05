@@ -22,6 +22,10 @@
 #include "GapBuffer.hpp"
 #include "GapBufferManager.hpp"
 #include "NCursesShell.hpp"
+#include "FormatInfo.hpp"
+#include "EditorSettings.hpp"
+#include "Command.hpp"
+#include "BufferCommands.hpp"
 
 
 #include "Debug.hpp"
@@ -32,9 +36,14 @@ int main (int argc, char *argv[])
   {
   printf ("Hello World\n");
   
-  GapBufferManager *  pManager = new GapBufferManager;
-  pManager->CreateBuffer ("TestBuffer");
-  GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
+  GapBufferManager *  pGapManager = new GapBufferManager;
+  FormatInfo *        pFormat = new FormatInfo;
+  EditorSettings *    pSettings = new EditorSettings;
+  CommandManager      cmdManager;  
+  
+  
+  pGapManager->CreateBuffer ("TestBuffer");
+  GapBuffer *  gapBuffer = pGapManager->GetBuffer ("TestBuffer");
   
   gapBuffer->AllocBuffer (256);
   gapBuffer->SetFileName ("./SyntaxTest.txt");
@@ -46,16 +55,20 @@ int main (int argc, char *argv[])
 
   
   const char * szRawBuffer = gapBuffer->GetBuffer();
-  
+  InitBufferCommands (pGapManager, cmdManager, pFormat, pSettings);
+                         
   //printf ("%s\n", szRawBuffer);
   //printf ("Line Length 0: %d\n", gapBuffer->GetLineLength(0));
   //printf ("Line Length 1:  %d\n", gapBuffer->GetLineLength(1));
   
   //gapBuffer->DebugPrintLineOffsets ();
+  //gapBuffer->BeginEdit();
+  //gapBuffer->DebugPrintLineOffsets ();
+  
   
   
   NCursesShell *  pShell = new NCursesShell ();
-  pShell->Update (gapBuffer);
+  pShell->Update (gapBuffer, cmdManager, *pSettings);
   delete (pShell);
   
   return (0);

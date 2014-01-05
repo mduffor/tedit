@@ -23,28 +23,38 @@
 
 #include "Types.hpp"
 #include "GapBuffer.hpp"
+#include "Command.hpp"
+#include "EditorSettings.hpp"
 
 //=============================================================================
 class NCursesShell
 {
   private:
   
-    BOOL  bShowLineNumbers = TRUE;
+    BOOL  bShowLineNumbers;
   
   public:
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update         (GapBuffer *  pBuffer);
+    VOID Update             (GapBuffer *       pBuffer,
+                             CommandManager &  cmdManager,
+                             EditorSettings &  editorSettings);
 
-    INT  NumDigits      (INT  iValueIn);
+    INT  NumDigits          (INT  iValueIn);
 
-    VOID DisplayWindow  (INT          iScreenX, 
-                         INT          iScreenY,
-                         INT          iWidth,
-                         INT          iHeight, 
-                         GapBuffer *  pBuffer);
-    
+    VOID DisplayWindow      (INT          iScreenX, 
+                             INT          iScreenY,
+                             INT          iWidth,
+                             INT          iHeight, 
+                             GapBuffer *  pBuffer);
+                         
+    BOOL GetHighlightState  (Location &  locCurr,
+                             Location &  locBegin,
+                             Location &  locEnd);
+
+    INT  NCursesToVKey      (INT  nCursesKey);
+                         
 };  
   
 

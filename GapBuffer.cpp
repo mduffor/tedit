@@ -63,7 +63,7 @@ BOOL operator> (const Location & locOne,
 
 //-----------------------------------------------------------------------------
 BOOL operator<= (const Location & locOne, 
-                const Location & locTwo)
+                 const Location & locTwo)
   {
   if (locOne == locTwo) return TRUE;
   return ((locOne.iLine < locTwo.iLine) ||
@@ -72,7 +72,7 @@ BOOL operator<= (const Location & locOne,
   
 //-----------------------------------------------------------------------------
 BOOL operator>= (const Location & locOne, 
-                const Location & locTwo)
+                 const Location & locTwo)
   {
   if (locOne == locTwo) return TRUE;
   return ((locOne.iLine > locTwo.iLine) ||
@@ -332,8 +332,12 @@ INT GapBuffer::GetLine (INT     iLine,
     } 
   else 
     {
+    //DebugPrintLineOffsets();
+    //printf ("starting offset %d for line %d of length %d copying %d\n", iStartingOffset, iLine, iLineLength, iCharsToCopy);
     // line is split across the gap
     INT  iCharsBeforeGap = iGapStart - iStartingOffset;
+    //printf ("strncpy gap start %d, start offset %d\n", iGapStart , iStartingOffset);
+    //printf ("strncpy making two copies, %d and %d in length\n", iCharsBeforeGap,  iCharsToCopy - iCharsBeforeGap);
     strncpy (pszBufferOut, &pBuffer[iStartingOffset], iCharsBeforeGap);
     strncpy (&pszBufferOut[iCharsBeforeGap], &pBuffer[iGapStart + iGapSize], iCharsToCopy - iCharsBeforeGap);
     }
@@ -344,6 +348,7 @@ INT GapBuffer::GetLine (INT     iLine,
 INT GapBuffer::GetCharsBetween (Location &  locOne,
                                 Location &  locTwo)
   {
+  // result is inclusive of locOne, exclusive of locTwo.
   Location  locSearch = locOne;
   Location  locEnd = locTwo;
   if (locOne > locTwo)
@@ -457,11 +462,15 @@ VOID  GapBuffer::BeginEdit (VOID)
       memmove (pBuffer + iGapStart, pBuffer + iOffset - iCharsToMove, iCharsToMove);
       iGapStart += iCharsToMove;
       };
+    //printf ("BeginEdit: Gap start is at %d\n", iGapStart);
     ShiftLineOffsets (iPrevGapStart, iGapStart);
     // add any characters past end of current line as needed
     while (iCharsPastEnd)
       {
       InsertChar (' ');
+      // remove the cursor increment performed by InsertChar() since we are actually
+      // just trying to move up to the cursor here.
+      locCursor.iCol -= 1;
       --iCharsPastEnd;
       }
     };
@@ -735,7 +744,7 @@ VOID GapBuffer::ShiftLineOffsets (INT  iPrevGapStart,
   
   for (INT  iIndex = 0; iIndex < aiLineOffsets.Length(); ++iIndex)
     {
-    if (aiLineOffsets [iIndex] >= iFirstGap)
+    if (aiLineOffsets [iIndex] > iFirstGap)
       {
       for (; iIndex < aiLineOffsets.Length(); ++iIndex)
         {
@@ -754,7 +763,8 @@ VOID GapBuffer::DebugPrintLineOffsets (VOID)
   printf ("GapBuffer %s : LineOffsets\n", GetName());
   for (INT iIndex = 0; iIndex < aiLineOffsets.Length (); ++iIndex)
     {
-    printf ("  %6d\n", (INT)aiLineOffsets[iIndex]);
+    //printf ("  %6d\n", (INT)aiLineOffsets[iIndex]);
+    printf (" %4d:  %6d\n", iIndex, (INT)aiLineOffsets[iIndex]);
     }
   };
   

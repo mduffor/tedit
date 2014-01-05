@@ -59,22 +59,25 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("CursorStartDoc", CmdCursorStartDoc);
   cmdManagerIn.AddCommand ("CursorEndDoc", CmdCursorEndDoc);
   
-  cmdManagerIn.AddCommand ("SelectUp", CmdCursorUp);
-  cmdManagerIn.AddCommand ("SelectDown", CmdCursorDown);
-  cmdManagerIn.AddCommand ("SelectLeft", CmdCursorLeft);
-  cmdManagerIn.AddCommand ("SelectRight", CmdCursorRight);
+  cmdManagerIn.AddCommand ("SelectUp", CmdSelectUp);
+  cmdManagerIn.AddCommand ("SelectDown", CmdSelectDown);
+  cmdManagerIn.AddCommand ("SelectLeft", CmdSelectLeft);
+  cmdManagerIn.AddCommand ("SelectRight", CmdSelectRight);
   
-  cmdManagerIn.AddCommand ("SelectNextWord", CmdCursorNextWord);
-  cmdManagerIn.AddCommand ("SelectPrevWord", CmdCursorPrevWord);
-  cmdManagerIn.AddCommand ("SelectStartLine", CmdCursorStartLine);
-  cmdManagerIn.AddCommand ("SelectEndLine", CmdCursorEndLine);
-  cmdManagerIn.AddCommand ("SelectStartDoc", CmdCursorStartDoc);
-  cmdManagerIn.AddCommand ("SelectEndDoc", CmdCursorEndDoc);
+  cmdManagerIn.AddCommand ("SelectNextWord", CmdSelectNextWord);
+  cmdManagerIn.AddCommand ("SelectPrevWord", CmdSelectPrevWord);
+  cmdManagerIn.AddCommand ("SelectStartLine", CmdSelectStartLine);
+  cmdManagerIn.AddCommand ("SelectEndLine", CmdSelectEndLine);
+  cmdManagerIn.AddCommand ("SelectStartDoc", CmdSelectStartDoc);
+  cmdManagerIn.AddCommand ("SelectEndDoc", CmdSelectEndDoc);
   
   cmdManagerIn.AddCommand ("SelectionCut", CmdSelectionCut);
   cmdManagerIn.AddCommand ("SelectionCopy", CmdSelectionCopy);
   cmdManagerIn.AddCommand ("SelectionPaste", CmdSelectionPaste);
   cmdManagerIn.AddCommand ("SelectionDelete", CmdSelectionDelete);
+  
+  cmdManagerIn.AddCommand ("Backspace", CmdBackspace);
+  cmdManagerIn.AddCommand ("Delete", CmdDelete);
   };
 
 //-----------------------------------------------------------------------------
@@ -233,7 +236,37 @@ VOID CmdSelectPrevWord (RStrArray *  arrayParams)
   StartSelection ();
   CursorPrevWord ();
   };
+
+//-----------------------------------------------------------------------------
+VOID CmdBackspace (RStrArray *  arrayParams)
+  {
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  if (!pBuffer->IsSelectionValid())
+    {
+    pBuffer->DeleteChars (-1);
+    // TODO: Undo
+    }
+  else
+    {
+    SelectionDelete();
+    }
+  };
   
+//-----------------------------------------------------------------------------
+VOID CmdDelete (RStrArray *  arrayParams)
+  {
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+  if (!pBuffer->IsSelectionValid())
+    {
+    pBuffer->DeleteChars (1);
+    // TODO: Undo
+    }
+  else
+    {
+    SelectionDelete();
+    }
+  };
+
 //-----------------------------------------------------------------------------
 VOID CursorUp (VOID)
   {
@@ -414,7 +447,7 @@ VOID CursorPrevWord (VOID)
     --locCursor.iCol;
     }
 
-  // move forward past any word characters you are on
+  // move past any word characters you are on
   while ((locCursor.iCol != 0) &&
          (pFormatInfo->IsWordChar (pBuffer->GetCharAtLocation (locCursor.iLine, locCursor.iCol - 1))))
     {
@@ -483,6 +516,7 @@ VOID SelectionDelete (VOID)
     {
     locBegin = locSelect;
     locEnd   = locCursor;
+    locEnd.iCol -= 1;
     }
 
   pBuffer->ClampLocationToValidChar (locBegin);
@@ -490,7 +524,7 @@ VOID SelectionDelete (VOID)
     
 
   pBuffer->SetCursor (locBegin);
-  INT  iCharsToDelete = pBuffer->GetCharsBetween (locBegin, locEnd);
+  INT  iCharsToDelete = pBuffer->GetCharsBetween (locBegin, locEnd) + 1;
   
   pBuffer->DeleteChars (iCharsToDelete);
   pBuffer->ClearSelection ();
