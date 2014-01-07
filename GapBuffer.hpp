@@ -33,12 +33,14 @@ class Location
     INT iCol;   // zero based
     
           Location  ()                           {iLine = 1; iCol = 0;};
-          Location  (Location & locIn)           {iLine = locIn.iLine; iCol = locIn.iCol;};
-          Location  (INT  iLineIn, INT  iColIn)  {iLine = iLineIn; iCol = iColIn;};
+          Location  (const Location & locIn)     {iLine = locIn.iLine; iCol = locIn.iCol;};
+          Location  (INT  iLineIn, INT  iColIn)  : iLine(iLineIn), iCol(iColIn) {};
     VOID  Set       (INT  iLineIn, INT  iColIn)  {iLine = iLineIn; iCol = iColIn;};
     BOOL  IsValid   (VOID)                       {return (iLine != 0 || iCol != 0);};
 
 };
+
+extern const Location locInvalid;
 
 BOOL operator== (const Location & locOne, const Location & locTwo);
 BOOL operator!= (const Location & locOne, const Location & locTwo);
@@ -110,7 +112,8 @@ class GapBuffer
     VOID          SetSelection     (Location &  locIn)      {SetSelection (locIn.iLine, locIn.iCol);};
     VOID          SetSelection     (INT  iLine, 
                                     INT  iCol)              {locSelect.Set (iLine, iCol);};
-    Location &    GetSelection     (VOID)                   {return (locSelect);};
+    Location      GetSelectionStart (VOID);
+    Location      GetSelectionEnd   (VOID);
     BOOL          IsSelectionValid (VOID)                   {return (locSelect.IsValid());};
     VOID          ClearSelection   (VOID)                   {locSelect.Set (0,0);};
 

@@ -191,61 +191,75 @@ void CommandTest::testCommand ()
   gapBuffer->SetSelection (1, 8);
   cmdManager.ExecuteCommand ("SelectionCut", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh ijkl\nmn op qr st\nu v w x\nyz\nZ", 34) == 0);
-  
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabh ijkl\nmn op qr st\nu v w x\nyz\nZ", 34) == 0);
   gapBuffer->SetCursor (1, 8);
   gapBuffer->SetSelection (1, 23);
   cmdManager.ExecuteCommand ("SelectionCut", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh ij\nmn op qr st\nu v w x\nyz\nZ", 32) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 5);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabh ijkmn op qr st\nu v w x\nyz\nZ", 32) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
 
+  // test cutting across lines at the start of the buffer
+  gapBuffer->Clear ();
+  gapBuffer->SetCursor (1, 0);
+  gapBuffer->InsertString ("abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n");
   gapBuffer->SetCursor (1, 7);
   gapBuffer->SetSelection (2, 1);
   cmdManager.ExecuteCommand ("SelectionCut", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh in op qr st\nu v w x\nyz\nZ", 29  ) == 0);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd ef op qr st\nu v w x\nyz\n", 28) == 0);
   CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
   
+  // test cutting across lines in the middle of the buffer
+  gapBuffer->Clear ();
+  gapBuffer->SetCursor (1, 0);
+  gapBuffer->InsertString ("abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n");
   gapBuffer->SetCursor (2, 3);
   gapBuffer->SetSelection (4, 0);
   cmdManager.ExecuteCommand ("SelectionCut", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh in op qr st\nu vZ", 22) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 2);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd efgh ijkl\nmn z\n", 20) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 3);
  
+  // test pasting from cutting
   gapBuffer->SetCursor (2, 3);
   cmdManager.ExecuteCommand ("SelectionPaste", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh in op qr st\nu v w x\nyz\nZ", 29  ) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n", 38  ) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 5);
  
+  // test copying
+  gapBuffer->Clear ();
   gapBuffer->SetCursor (1, 0);
-  gapBuffer->SetSelection (1, 5);
+  gapBuffer->InsertString ("abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n");
+  gapBuffer->SetCursor (1, 0);
+  gapBuffer->SetSelection (1, 4);
   cmdManager.ExecuteCommand ("SelectionCopy", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh in op qr st\nu v w x\nyz\nZ", 29  ) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
-  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "Aabgh") == 0);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n", 38  ) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 5);
+  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "abcd ") == 0);
  
+  // test paste-replacing
   gapBuffer->SetCursor (1, 0);
-  gapBuffer->SetSelection (1, 5);
+  gapBuffer->SetSelection (1, 4);
   cmdManager.ExecuteCommand ("SelectionPaste", NULL);
   gapBuffer->MoveGapToEnd ();
-  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "Aabgh in op qr st\nu v w x\nyz\nZ", 29  ) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
-  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "Aabgh") == 0);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n", 38  ) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 5);
+  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "abcd ") == 0);
 
+  // test multiple pasting
   gapBuffer->SetCursor (1, 0);
   cmdManager.ExecuteCommand ("SelectionPaste", NULL);
   gapBuffer->MoveGapToEnd ();
-  //CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "AabghAabgh in op qr st\nu v w x\nyz\nZ", 34  ) == 0);
-  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 4);
-  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "Aabgh") == 0);
+  CPPUNIT_ASSERT (strncmp (gapBuffer->GetBuffer(), "abcd abcd efgh ijkl\nmn op qr st\nu v w x\nyz\n", 43  ) == 0);
+  CPPUNIT_ASSERT (gapBuffer->GetNumLines () == 5);
+  CPPUNIT_ASSERT (strcmp (pSettings->GetClip ().AsChar (), "abcd ") == 0);
   
-  gapBuffer->FillGap ();
-  printf ("GapBuffer is : \n%s\n", gapBuffer->GetBuffer());
-  printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
+  //gapBuffer->FillGap ();
+  //printf ("GapBuffer is : \n%s\n", gapBuffer->GetBuffer());
+  //printf ("Cursor is %d %d\n", gapBuffer->GetCursor ().iLine, gapBuffer->GetCursor ().iCol);
   
   pManager->DeleteBuffer ("TestBuffer");
   gapBuffer = NULL;

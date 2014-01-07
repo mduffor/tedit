@@ -464,29 +464,19 @@ VOID SelectionCopy (VOID)
   ASSERT (pGapBufferManager != NULL);
   GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
 
-  Location locCursor = pBuffer->GetCursor ();
-  Location locSelect = pBuffer->GetSelection ();
-  
-  Location locBegin = locCursor;
-  Location locEnd   = locSelect;
-  
-  if (locBegin > locEnd)
-    {
-    locBegin = locSelect;
-    locEnd   = locCursor;
-    }
-
+  Location locBegin = pBuffer->GetSelectionStart ();
+  Location locEnd   = pBuffer->GetSelectionEnd ();
   pBuffer->ClampLocationToValidChar (locBegin);
   pBuffer->ClampLocationToValidChar (locEnd);
 
   // copy selected text to clip
   pBuffer->SetCursor (locBegin);
-  INT  iCharsToCopy = pBuffer->GetCharsBetween (locBegin, locEnd);
+  INT  iCharsToCopy = pBuffer->GetCharsBetween (locBegin, locEnd) + 1;
   
   RStr &  strClip = pSettings->GetClip ();
   strClip.GrowAbsolute (iCharsToCopy + 1);
   strClip.SetAt (iCharsToCopy, '\0');
-  
+
   pBuffer->GetString (strClip.GetBufferPtr (), iCharsToCopy);
   //printf ("Copied %d chars (%d, %d) to (%d, %d):\n", iCharsToCopy, locBegin.iLine, locBegin.iCol, locEnd.iLine, locEnd.iCol);
   //printf (strClip.AsChar ());
@@ -506,25 +496,15 @@ VOID SelectionDelete (VOID)
     return;
     }
   
-  Location locCursor = pBuffer->GetCursor ();
-  Location locSelect = pBuffer->GetSelection ();
-  
-  Location locBegin = locCursor;
-  Location locEnd   = locSelect;
-  
-  if (locBegin > locEnd)
-    {
-    locBegin = locSelect;
-    locEnd   = locCursor;
-    locEnd.iCol -= 1;
-    }
-
+  Location locBegin = pBuffer->GetSelectionStart ();
+  Location locEnd   = pBuffer->GetSelectionEnd ();
   pBuffer->ClampLocationToValidChar (locBegin);
   pBuffer->ClampLocationToValidChar (locEnd);
-    
 
   pBuffer->SetCursor (locBegin);
   INT  iCharsToDelete = pBuffer->GetCharsBetween (locBegin, locEnd) + 1;
+  
+  //printf ("Deleting chars between %d,%d and %d,%d num chars %d\n", locBegin.iLine, locBegin.iCol, locEnd.iLine, locEnd.iCol, iCharsToDelete);
   
   pBuffer->DeleteChars (iCharsToDelete);
   pBuffer->ClearSelection ();

@@ -24,12 +24,15 @@
 ASSERTFILE (__FILE__)
 
 #include "FilePath.hpp"
+#include "GapBuffer.hpp"
 
 static const INT DEFAULT_BUFFER_GROW_SIZE = 512;
 static const INT LINE_FEED_CHAR = '\n';
 static const INT NULL_CHAR = '\0';
 
-#include "GapBuffer.hpp"
+const Location locInvalid (0,0);
+
+
 
 //-----------------------------------------------------------------------------
 BOOL operator== (const Location & locOne, 
@@ -225,6 +228,35 @@ EStatus  GapBuffer::MoveCursor (INT iCount)
   bCursorMoved = TRUE;
   return (EStatus::kSuccess);
   };
+
+//-----------------------------------------------------------------------------
+Location  GapBuffer::GetSelectionStart (VOID)
+  {
+  if (!locSelect.IsValid () || !locCursor.IsValid ())
+    {
+    return (locInvalid);
+    }
+  if (locCursor < locSelect)
+    {
+    return (locCursor);
+    }
+  return (locSelect);
+  }
+
+//-----------------------------------------------------------------------------
+Location  GapBuffer::GetSelectionEnd   (VOID)
+  {
+  if (!locSelect.IsValid () || !locCursor.IsValid ())
+    {
+    return (locInvalid);
+    }
+  if (locCursor < locSelect)
+    {
+    return (locSelect);
+    }
+  Location  locReturn (locCursor.iLine, locCursor.iCol - 1);
+  return (locReturn); 
+  };
   
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::GetString (char * szStringOut, INT iCount)
@@ -307,7 +339,16 @@ VOID  GapBuffer::ClampLocationToValidChar (Location &  locInOut)
     locInOut.Set (iLastLine, GetLineLength (iLastLine));
     return;
     }
+  
   locInOut.iCol = TMin (locInOut.iCol, GetLineLength (locInOut.iLine));
+  if (locInOut.iCol < 0) 
+    {
+    locInOut.Set (locInOut.iLine - 1, GetLineLength (locInOut.iLine - 1));
+    }
+  if (locInOut.iLine <= 0)
+    {
+    locInOut = locInvalid;
+    }
   }
 
 //-----------------------------------------------------------------------------
@@ -748,7 +789,7 @@ VOID GapBuffer::ShiftLineOffsets (INT  iPrevGapStart,
       {
       for (; iIndex < aiLineOffsets.Length(); ++iIndex)
         {
-        if (aiLineOffsets [iIndex] >= iLastGap) break;
+        if (aiLineOffsets [iIndex] > iLastGap) break;
         aiLineOffsets [iIndex] += iDelta;
         }
       break;  

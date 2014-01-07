@@ -244,24 +244,9 @@ VOID NCursesShell::DisplayWindow (INT          iScreenX,
   // move to the starting point in the buffer
   //printf ("Processing buffer with %d lines on a screen sized %d x %d\n\n", iMaxLine, iHeight, iWidth);
   // step through each line to display
-  Location locSelection = pBuffer->GetSelection ();
-  Location locHighlightStart;
-  Location locHighlightEnd;
+  Location locHighlightStart = pBuffer->GetSelectionStart ();
+  Location locHighlightEnd   = pBuffer->GetSelectionEnd ();
   
-  // When we highlight, if the selection mark is to the left and cursor to the right, we highlight
-  // up to but not including the cursor.  If the selection is to the right and cursor is to the left,
-  // we highlight and affect both inclusively.
-  if (locSelection < locCursor) 
-    {
-    locHighlightStart = locSelection;
-    locHighlightEnd = locCursor;
-    locHighlightEnd.iCol -= 1;
-    }
-  else
-    {
-    locHighlightStart = locCursor;
-    locHighlightEnd = locSelection;
-    };
   BOOL  bValidHighlight = locHighlightStart.IsValid() && locHighlightEnd.IsValid();
   INT   iHighlightFlag;
   
@@ -296,9 +281,9 @@ VOID NCursesShell::DisplayWindow (INT          iScreenX,
     }
 
   move (0,0);
-  printw("select %d %d  cursor %d %d", locSelection.iLine, locSelection.iCol, locCursor.iLine, locCursor.iCol);
+  //printw("selectStart %d %d  cursor %d %d", locHighlightStart.iLine, locHighlightStart.iCol, locCursor.iLine, locCursor.iCol);
   
-  if (locSelection.IsValid ())
+  if (locHighlightStart.IsValid ())
     {
     curs_set(0);
     move (-1, -1);
