@@ -43,11 +43,12 @@ class NCursesShell
 
     INT  NumDigits          (INT  iValueIn);
 
-    VOID DisplayWindow      (INT          iScreenX, 
-                             INT          iScreenY,
-                             INT          iWidth,
-                             INT          iHeight, 
-                             GapBuffer *  pBuffer);
+    VOID DisplayWindow      (INT               iScreenX, 
+                             INT               iScreenY,
+                             INT               iWidth,
+                             INT               iHeight, 
+                             GapBuffer *       pBuffer,
+                             EditorSettings &  editorSettings);
                          
     BOOL GetHighlightState  (Location &  locCurr,
                              Location &  locBegin,

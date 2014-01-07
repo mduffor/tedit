@@ -18,6 +18,7 @@
 // along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <stdio.h>
 #include <string.h>
 #include "Types.hpp"
 #include "Debug.hpp"
@@ -63,7 +64,7 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
                            CommandManager &  cmdManager,
                            EditorSettings &  editorSettings)
   {
-  GapBuffer *  pBufferKeyFocus = pBuffer;
+  //GapBuffer *  pBufferKeyFocus = pBuffer;
   
   if (pBuffer == NULL)
     {
@@ -99,7 +100,8 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
     {
     DisplayWindow (0, 5,
                   iColMax, 20, // iColMax, iRowMax, 
-                  pBuffer);
+                  pBuffer,
+                  editorSettings);
     //refresh();
     
     INT vKey = NCursesToVKey(getch());
@@ -149,6 +151,7 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
         case (VKFLG_SHIFT | VKEY_RIGHT):  cmdManager.ExecuteCommand ("SelectRight", NULL);  break;
         case (VKFLG_SHIFT | VKEY_UP):     cmdManager.ExecuteCommand ("SelectUp", NULL);  break;
         case (VKFLG_SHIFT | VKEY_DOWN):   cmdManager.ExecuteCommand ("SelectDown", NULL);  break;
+        case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
         
         
         case VKEY_ENTER:
@@ -181,24 +184,31 @@ INT  NCursesShell::NumDigits (INT  iValueIn)
 
   
 //-----------------------------------------------------------------------------
-VOID NCursesShell::DisplayWindow (INT          iScreenX, 
-                                  INT          iScreenY,
-                                  INT          iWidth,
-                                  INT          iHeight, 
-                                  GapBuffer *  pBuffer)
+VOID NCursesShell::DisplayWindow (INT               iScreenX, 
+                                  INT               iScreenY,
+                                  INT               iWidth,
+                                  INT               iHeight, 
+                                  GapBuffer *       pBuffer,
+                                  EditorSettings &  editorSettings)
   {
   SyntaxParser  syntaxParser;
 
   Location  locCursor = pBuffer->GetCursor();
   Location  locBufferCurr;
-  int  iTopLine = 0;
-  int  iTopCol = 0;
+  INT  iTopLine = 0;
+  INT  iTopCol = 0;
   INT  iScreenCol = 0;
-  int  iMaxLine = pBuffer->GetNumLines () - 1;
-  const int LINE_BUFFER_LENGTH = 512;
+  INT  iMaxLine = pBuffer->GetNumLines () - 1;
+  const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
-  static int  szFullMarkup [LINE_BUFFER_LENGTH];
-  
+  static INT  szFullMarkup [LINE_BUFFER_LENGTH];
+  BOOL bShowStatusLine = TRUE;
+
+  if (bShowStatusLine)
+    {
+    iHeight -= 1;
+    }
+    
   // Draw the line numbers
   if (bShowLineNumbers) 
     {
@@ -249,7 +259,7 @@ VOID NCursesShell::DisplayWindow (INT          iScreenX,
   
   BOOL  bValidHighlight = locHighlightStart.IsValid() && locHighlightEnd.IsValid();
   INT   iHighlightFlag;
-  
+
   for (INT  iScreenLine = iScreenY; iScreenLine < (iScreenY + iHeight); ++iScreenLine)
     {
     // TODO: determine if we are in a comment
@@ -280,9 +290,54 @@ VOID NCursesShell::DisplayWindow (INT          iScreenX,
       }
     }
 
-  move (0,0);
+  // display the status bar
+  // [1]Filename/Command      [x]                  INS/OVR [xx] Line: 0000 / 00000 [xx] Col: 00[1]
+  static char szColNum [128];
+  static char szLineNum [128];
+  static char szFilename [512];
+  if (bShowStatusLine)
+    {
+    snprintf (szColNum, sizeof (szColNum), "Col : %d", locCursor.iCol);
+    snprintf (szLineNum, sizeof (szLineNum), "Line: %d / %d", locCursor.iLine, iMaxLine);
+    int  iColLen = strlen (szColNum);
+    int  iLineLen = strlen (szLineNum);
+
+    int  iFilenameMax = iWidth - 1 - 3 - 2 - iLineLen - 2 - iColLen - 1;
+    
+    snprintf (szFilename, iFilenameMax, "%s", pBuffer->GetFileName ());
+    int  iFilenameLen = strlen (szFilename);
+    
+    
+    
+    INT  iStatusBarY = iScreenY + iHeight;
+    attron (A_REVERSE);
+    move (iStatusBarY, 0);
+    addch (' ');
+    addstr (szFilename);
+    for (INT  iFill = 0; iFill < iFilenameMax - iFilenameLen; ++iFill)
+      {
+      addch (' ');
+      }
+    if (editorSettings.IsInsertMode ())
+      {
+      addstr ("INS  ");
+      }
+    else
+      {
+      addstr ("OVR  ");
+      };
+    addstr (szLineNum);
+    addch (' ');
+    addstr (szColNum);
+    addch (' ');
+    attroff (A_REVERSE);
+    };  
+  
+  
+  //move (0,0);
   //printw("selectStart %d %d  cursor %d %d", locHighlightStart.iLine, locHighlightStart.iCol, locCursor.iLine, locCursor.iCol);
   
+  // move the cursor to the correct place
   if (locHighlightStart.IsValid ())
     {
     curs_set(0);
