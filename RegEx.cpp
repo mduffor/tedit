@@ -725,7 +725,9 @@ VOID  RegEx::Match  (const char *    szSourceIn,
   for (iStartMatch = iSearchStartIn; iStartMatch <= iMaxMatch; ++iStartMatch)
     {
     INT           iLongestMatch = -1;
-    const char *  pszStartMatch = &szSourceIn[iStartMatch];
+    #ifdef DEBUGMSG
+      const char *  pszStartMatch = &szSourceIn[iStartMatch];
+    #endif
     const INT     iScan = -1;
     INT32         iPos          = iStartMatch;
 

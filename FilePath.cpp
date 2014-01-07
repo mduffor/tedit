@@ -437,7 +437,10 @@ EStatus  FilePath::cd  (const RStr &  strDirIn,
 
   if (bChangeShellDir)
     {
-    chdir (strCurrPath.AsChar ());
+    if (chdir (strCurrPath.AsChar ()) != 0)
+      {
+      return (EStatus::kFailure);
+      };
     };
 
   return (EStatus::kSuccess);
@@ -572,7 +575,10 @@ RStr  FilePath::GetCwd  (VOID)
   CHAR   szBuffer [512];
   
   memset (szBuffer, 0, 512);
-  getcwd (szBuffer, 511);
+  if (getcwd (szBuffer, 511) == NULL)
+    {
+    return (RStr::kEmpty);
+    };
 
   return (RStr (szBuffer));
   };
