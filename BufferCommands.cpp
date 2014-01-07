@@ -75,6 +75,7 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("SelectionCopy", CmdSelectionCopy);
   cmdManagerIn.AddCommand ("SelectionPaste", CmdSelectionPaste);
   cmdManagerIn.AddCommand ("SelectionDelete", CmdSelectionDelete);
+  cmdManagerIn.AddCommand ("SelectAll", CmdSelectAll);
   
   cmdManagerIn.AddCommand ("Backspace", CmdBackspace);
   cmdManagerIn.AddCommand ("Delete", CmdDelete);
@@ -513,6 +514,17 @@ VOID SelectionDelete (VOID)
   // undoable  
   
   };
+
+//-----------------------------------------------------------------------------
+VOID SelectAll (VOID)  
+  {
+  ASSERT (pGapBufferManager != NULL);
+  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
+
+  INT  iLastLine = pBuffer->GetNumLines ();
+  pBuffer->SetCursor(1, 0);
+  pBuffer->SetSelection(iLastLine, pBuffer->GetLineLength (iLastLine));
+  };
   
   
 //-----------------------------------------------------------------------------
@@ -545,6 +557,13 @@ VOID CmdSelectionPaste (RStrArray *  arrayParams)
 VOID CmdSelectionDelete (RStrArray *  arrayParams)
   {
   SelectionDelete ();
+  // TODO: Undo
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdSelectAll (RStrArray *  arrayParams)
+  {
+  SelectAll ();
   // TODO: Undo
   };
   

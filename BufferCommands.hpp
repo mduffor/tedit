@@ -70,10 +70,12 @@ VOID CursorPrevWord (VOID);
   
 VOID SelectionCopy (VOID);
 VOID SelectionDelete (VOID);
+VOID SelectAll (VOID);
 
 VOID CmdSelectionCut (RStrArray *  arrayParams);
 VOID CmdSelectionCopy (RStrArray *  arrayParams);
 VOID CmdSelectionPaste (RStrArray *  arrayParams);
 VOID CmdSelectionDelete (RStrArray *  arrayParams);
+VOID CmdSelectAll (RStrArray *  arrayParams);
 
 #endif // BUFFERCOMMANDS_HPP
