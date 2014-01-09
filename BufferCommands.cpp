@@ -30,6 +30,7 @@ ASSERTFILE (__FILE__)
 #include "EditorSettings.hpp"
 
 static GapBufferManager * pGapBufferManager = NULL;
+static GapBuffer *        pBuffer = NULL;
 static FormatInfo *       pFormatInfo = NULL;
 static EditorSettings *   pSettings = NULL;
 
@@ -46,6 +47,8 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   pGapBufferManager = pBufferManagerIn;
   pFormatInfo = pFormatIn;
   pSettings = pSettingsIn;
+  BufferCommandsSetBuffer (pGapBufferManager->GetCurrent ());
+
 
   cmdManagerIn.AddCommand ("CursorUp", CmdCursorUp);
   cmdManagerIn.AddCommand ("CursorDown", CmdCursorDown);
@@ -58,6 +61,8 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("CursorEndLine", CmdCursorEndLine);
   cmdManagerIn.AddCommand ("CursorStartDoc", CmdCursorStartDoc);
   cmdManagerIn.AddCommand ("CursorEndDoc", CmdCursorEndDoc);
+  cmdManagerIn.AddCommand ("CursorPageDown", CmdCursorPageDown);
+  cmdManagerIn.AddCommand ("CursorPageUp", CmdCursorPageUp);
   
   cmdManagerIn.AddCommand ("SelectUp", CmdSelectUp);
   cmdManagerIn.AddCommand ("SelectDown", CmdSelectDown);
@@ -76,15 +81,22 @@ VOID InitBufferCommands (GapBufferManager *  pBufferManagerIn,
   cmdManagerIn.AddCommand ("SelectionPaste", CmdSelectionPaste);
   cmdManagerIn.AddCommand ("SelectionDelete", CmdSelectionDelete);
   cmdManagerIn.AddCommand ("SelectAll", CmdSelectAll);
+  cmdManagerIn.AddCommand ("ScrollWindowUp", CmdScrollWindowUp);
+  cmdManagerIn.AddCommand ("ScrollWindowDown", CmdScrollWindowDown);
   
   cmdManagerIn.AddCommand ("Backspace", CmdBackspace);
   cmdManagerIn.AddCommand ("Delete", CmdDelete);
   };
 
 //-----------------------------------------------------------------------------
+VOID BufferCommandsSetBuffer (GapBuffer *  pBufferIn)
+  {
+  pBuffer = pBufferIn;
+  }
+  
+//-----------------------------------------------------------------------------
 VOID StartSelection (VOID)
   {
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   if (!pBuffer->IsSelectionValid ())
     {
     pBuffer->SetSelection (pBuffer->GetCursor ());
@@ -94,7 +106,6 @@ VOID StartSelection (VOID)
 //-----------------------------------------------------------------------------
 VOID DismissSelection (VOID)
   {
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   pBuffer->ClearSelection ();
   };
   
@@ -241,7 +252,6 @@ VOID CmdSelectPrevWord (RStrArray *  arrayParams)
 //-----------------------------------------------------------------------------
 VOID CmdBackspace (RStrArray *  arrayParams)
   {
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   if (!pBuffer->IsSelectionValid())
     {
     pBuffer->DeleteChars (-1);
@@ -256,7 +266,6 @@ VOID CmdBackspace (RStrArray *  arrayParams)
 //-----------------------------------------------------------------------------
 VOID CmdDelete (RStrArray *  arrayParams)
   {
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   if (!pBuffer->IsSelectionValid())
     {
     pBuffer->DeleteChars (1);
@@ -271,35 +280,28 @@ VOID CmdDelete (RStrArray *  arrayParams)
 //-----------------------------------------------------------------------------
 VOID CursorUp (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
   if (locCursor.iLine > 1) {
-    locCursor.iLine -= 1;
+    locCursor.iLine = TMax (locCursor.iLine - 1, 1);
     pBuffer->SetCursor (locCursor);
     };
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorDown (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
-  locCursor.iLine += 1;
+  locCursor.iLine = TMin (locCursor.iLine + 1, pBuffer->GetNumLines ());
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorLeft (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
   if (locCursor.iCol > 0) {
     locCursor.iCol -= 1;
@@ -314,72 +316,82 @@ VOID CursorLeft (VOID)
       }
     };
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorRight (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
   locCursor.iCol += 1;
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorStartDoc ()
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   pBuffer->SetCursor (1, 0);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorEndDoc (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   INT  iLastLine = pBuffer->GetNumLines ();
   pBuffer->SetCursor (iLastLine, pBuffer->GetLineLength (iLastLine));
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorStartLine (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
   locCursor.iCol = 0;
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorEndLine (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
   locCursor.iCol = pBuffer->GetLineLength (locCursor.iLine);
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
+VOID CursorPageUp (VOID)
+  {
+  Location  locCursor = pBuffer->GetCursor ();
+  if (locCursor.iLine > 1) {
+    locCursor.iLine = TMax (locCursor.iLine - pBuffer->GetLinesPerPage (), 1);
+    pBuffer->SetCursor (locCursor);
+    };
+  pBuffer->MoveWindowToCursor ();
+  // not undoable  
+  };
+
+//-----------------------------------------------------------------------------
+VOID CursorPageDown (VOID)
+  {
+  Location  locCursor = pBuffer->GetCursor ();
+  locCursor.iLine = TMin (locCursor.iLine + pBuffer->GetLinesPerPage (), pBuffer->GetNumLines ());
+  pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
+  // not undoable  
+  };
+  
+//-----------------------------------------------------------------------------
 VOID CursorNextWord (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
 
   // if beyond buffer, do nothing
@@ -413,15 +425,13 @@ VOID CursorNextWord (VOID)
     }
 
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
   // not undoable  
   };
 
 //-----------------------------------------------------------------------------
 VOID CursorPrevWord (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   Location  locCursor = pBuffer->GetCursor ();
 
   // if beyond buffer, go to end
@@ -455,6 +465,7 @@ VOID CursorPrevWord (VOID)
     --locCursor.iCol;
     };
   pBuffer->SetCursor (locCursor);
+  pBuffer->MoveWindowToCursor ();
 
   // not undoable  
   };
@@ -462,9 +473,6 @@ VOID CursorPrevWord (VOID)
 //-----------------------------------------------------------------------------
 VOID SelectionCopy (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
-
   Location locBegin = pBuffer->GetSelectionStart ();
   Location locEnd   = pBuffer->GetSelectionEnd ();
   pBuffer->ClampLocationToValidChar (locBegin);
@@ -489,9 +497,6 @@ VOID SelectionCopy (VOID)
 //-----------------------------------------------------------------------------
 VOID SelectionDelete (VOID)
   {
-  ASSERT (pGapBufferManager != NULL);
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
-
   if (!pBuffer->IsSelectionValid())
     {
     return;
@@ -509,6 +514,7 @@ VOID SelectionDelete (VOID)
   
   pBuffer->DeleteChars (iCharsToDelete);
   pBuffer->ClearSelection ();
+  pBuffer->MoveWindowToCursor ();
   
   // TODO: Undo
   // undoable  
@@ -518,13 +524,43 @@ VOID SelectionDelete (VOID)
 //-----------------------------------------------------------------------------
 VOID SelectAll (VOID)  
   {
-  ASSERT (pGapBufferManager != NULL);
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
-
   INT  iLastLine = pBuffer->GetNumLines ();
   pBuffer->SetCursor(1, 0);
   pBuffer->SetSelection(iLastLine, pBuffer->GetLineLength (iLastLine));
+  pBuffer->MoveWindowToCursor ();
   };
+
+//-----------------------------------------------------------------------------
+VOID ScrollWindowUp (VOID)
+  {
+  ScrollWindow (1);
+  }
+  
+//-----------------------------------------------------------------------------
+VOID ScrollWindowDown (VOID)
+  {
+  ScrollWindow (-1);
+  }
+  
+//-----------------------------------------------------------------------------
+VOID ScrollWindowPageUp (VOID)
+  {
+  ScrollWindow (pBuffer->GetLinesPerPage ());
+  }  
+  
+//-----------------------------------------------------------------------------
+VOID ScrollWindowPageDown (VOID)
+  {
+  ScrollWindow (-pBuffer->GetLinesPerPage ());
+  }  
+
+//-----------------------------------------------------------------------------
+VOID ScrollWindow (INT  iNumLinesIn)
+  {
+  Location  locWindowPosition = pBuffer->GetWindowPos ();
+  locWindowPosition.iLine = TMax (1, TMin (pBuffer->GetNumLines(), locWindowPosition.iLine + iNumLinesIn));
+  pBuffer->SetWindowPos (locWindowPosition);  
+  }  
   
   
 //-----------------------------------------------------------------------------
@@ -545,8 +581,6 @@ VOID CmdSelectionCopy (RStrArray *  arrayParams)
 //-----------------------------------------------------------------------------
 VOID CmdSelectionPaste (RStrArray *  arrayParams)
   {
-  ASSERT (pGapBufferManager != NULL);
-  GapBuffer *  pBuffer = pGapBufferManager->GetCurrent ();
   SelectionDelete ();
   RStr &  strClip = pSettings->GetClip ();
   pBuffer->InsertString(strClip.AsChar ());
@@ -566,5 +600,37 @@ VOID CmdSelectAll (RStrArray *  arrayParams)
   SelectAll ();
   // TODO: Undo
   };
+  
+//-----------------------------------------------------------------------------
+VOID CmdScrollWindowUp (RStrArray *  arrayParams)
+  {
+  ScrollWindowUp ();
+  // TODO: Undo
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdScrollWindowDown (RStrArray *  arrayParams)
+  {
+  ScrollWindowDown ();
+  // TODO: Undo
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdCursorPageUp (RStrArray *  arrayParams)
+  {
+  ScrollWindowPageDown ();
+  CursorPageUp ();
+  // TODO: Undo
+  };
+  
+//-----------------------------------------------------------------------------
+VOID CmdCursorPageDown (RStrArray *  arrayParams)
+  {
+  ScrollWindowPageUp ();
+  CursorPageDown ();
+  // TODO: Undo
+  };  
+  
+  
   
   

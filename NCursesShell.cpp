@@ -29,12 +29,14 @@ ASSERTFILE (__FILE__)
 #include "GapBuffer.hpp"
 #include "SyntaxParser.hpp"
 #include "VKeys.hpp"
-
+#include "BufferCommands.hpp"
 
 //-----------------------------------------------------------------------------
 NCursesShell::NCursesShell ()
   {
   bShowLineNumbers = TRUE;
+  bShowStatusBar = TRUE;
+  pBufferInputFocus = NULL;
   
   initscr ();  // start ncurses
   raw ();      // disable line buffering
@@ -65,6 +67,11 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
                            EditorSettings &  editorSettings)
   {
   //GapBuffer *  pBufferKeyFocus = pBuffer;
+  
+  if (pBufferInputFocus == NULL) 
+    {
+    pBufferInputFocus = pBuffer;
+    };
   
   if (pBuffer == NULL)
     {
@@ -103,64 +110,8 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
                   pBuffer,
                   editorSettings);
     //refresh();
-    
-    INT vKey = NCursesToVKey(getch());
-    
-    if (vKey >= 32 && vKey <= 126) 
-      {
-      // standard printable ASCII key
-      
-      if (pBuffer->IsSelectionValid())
-        {
-        cmdManager.ExecuteCommand ("SelectionDelete", NULL);
-        }
-      else
-        {
-        if (editorSettings.IsInsertMode ())
-          {
-          pBuffer->InsertChar(vKey);
-          }
-        else
-          {
-          pBuffer->ReplaceChar(vKey);
-          }
-        }
-      }
-    else
-      {
-      
-      // Note: This needs to be converted to a configureable hotkey lookup.
-      switch (vKey)
-        {
-        case VKEY_DOWN:      cmdManager.ExecuteCommand ("CursorDown", NULL);  break;
-        case VKEY_UP:        cmdManager.ExecuteCommand ("CursorUp", NULL);  break;
-        case VKEY_LEFT:      cmdManager.ExecuteCommand ("CursorLeft", NULL);  break;
-        case VKEY_RIGHT:     cmdManager.ExecuteCommand ("CursorRight", NULL);  break;
-        case VKEY_TAB:       pBuffer->InsertString (editorSettings.GetTabString()); 
-        case VKEY_HOME:      cmdManager.ExecuteCommand ("CursorStartLine", NULL);  break;
-        case VKEY_END:       cmdManager.ExecuteCommand ("CursorEndLine", NULL);  break;
-        case VKEY_BACKSPACE: cmdManager.ExecuteCommand ("Backspace", NULL);  break;
-        case VKEY_DELETE:    cmdManager.ExecuteCommand ("Delete", NULL);  break;
-        case VKEY_INSERT:    editorSettings.SetInsertMode (!editorSettings.IsInsertMode());  break;
-        
-        case (VKFLG_CONTROL | VKEY_RIGHT): cmdManager.ExecuteCommand ("CursorNextWord", NULL);  break;
-        case (VKFLG_CONTROL | VKEY_LEFT):  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);  break;
-        case (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_RIGHT): cmdManager.ExecuteCommand ("SelectNextWord", NULL);  break;
-        case (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_LEFT):  cmdManager.ExecuteCommand ("SelectPrevWord", NULL);  break;
-        case (VKFLG_SHIFT | VKEY_LEFT):   cmdManager.ExecuteCommand ("SelectLeft", NULL);  break;
-        case (VKFLG_SHIFT | VKEY_RIGHT):  cmdManager.ExecuteCommand ("SelectRight", NULL);  break;
-        case (VKFLG_SHIFT | VKEY_UP):     cmdManager.ExecuteCommand ("SelectUp", NULL);  break;
-        case (VKFLG_SHIFT | VKEY_DOWN):   cmdManager.ExecuteCommand ("SelectDown", NULL);  break;
-        case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
-        
-        
-        case VKEY_ENTER:
-          bExit = TRUE;
-          break;
-        }
-      
-      }
 
+    bExit = ProcessInput (pBufferInputFocus, cmdManager, editorSettings);
       
     //move(0,0);
     //printw("char : %d            ", ch);
@@ -169,6 +120,79 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
     }
   };
 
+//-----------------------------------------------------------------------------
+BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
+                                 CommandManager &  cmdManager,
+                                 EditorSettings &  editorSettings)
+  {
+  
+  BufferCommandsSetBuffer (pBufferInputFocus);
+
+  INT vKey = NCursesToVKey(getch());
+  
+  if (vKey >= 32 && vKey <= 126) 
+    {
+    // standard printable ASCII key
+    
+    if (pBufferInputFocus->IsSelectionValid())
+      {
+      cmdManager.ExecuteCommand ("SelectionDelete", NULL);
+      }
+    else
+      {
+      if (editorSettings.IsInsertMode ())
+        {
+        pBufferInputFocus->InsertChar(vKey);
+        }
+      else
+        {
+        pBufferInputFocus->ReplaceChar(vKey);
+        }
+      }
+    }
+  else
+    {
+    
+    // Note: This needs to be converted to a configureable hotkey lookup.
+    switch (vKey)
+      {
+      case VKEY_DOWN:      cmdManager.ExecuteCommand ("CursorDown", NULL);  break;
+      case VKEY_UP:        cmdManager.ExecuteCommand ("CursorUp", NULL);  break;
+      case VKEY_PAGEDOWN:  cmdManager.ExecuteCommand ("CursorPageDown", NULL);  break;
+      case VKEY_PAGEUP:    cmdManager.ExecuteCommand ("CursorPageUp", NULL);  break;
+      case VKEY_LEFT:      cmdManager.ExecuteCommand ("CursorLeft", NULL);  break;
+      case VKEY_RIGHT:     cmdManager.ExecuteCommand ("CursorRight", NULL);  break;
+      case VKEY_TAB:       pBufferInputFocus->InsertString (editorSettings.GetTabString()); 
+      case VKEY_HOME:      cmdManager.ExecuteCommand ("CursorStartLine", NULL);  break;
+      case VKEY_END:       cmdManager.ExecuteCommand ("CursorEndLine", NULL);  break;
+      case VKEY_BACKSPACE: cmdManager.ExecuteCommand ("Backspace", NULL);  break;
+      case VKEY_DELETE:    cmdManager.ExecuteCommand ("Delete", NULL);  break;
+      case VKEY_INSERT:    editorSettings.SetInsertMode (!editorSettings.IsInsertMode());  break;
+      case VKEY_ENTER:     pBufferInputFocus->InsertChar('\n'); break;
+
+      
+      case (VKFLG_CONTROL | VKEY_RIGHT): cmdManager.ExecuteCommand ("CursorNextWord", NULL);  break;
+      case (VKFLG_CONTROL | VKEY_LEFT):  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);  break;
+      
+      case (VKFLG_CONTROL | VKEY_UP):    cmdManager.ExecuteCommand ("ScrollWindowUp", NULL);  break;
+      case (VKFLG_CONTROL | VKEY_DOWN):  cmdManager.ExecuteCommand ("ScrollWindowDown", NULL);  break;
+      
+      case (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_RIGHT): cmdManager.ExecuteCommand ("SelectNextWord", NULL);  break;
+      case (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_LEFT):  cmdManager.ExecuteCommand ("SelectPrevWord", NULL);  break;
+      case (VKFLG_SHIFT | VKEY_LEFT):   cmdManager.ExecuteCommand ("SelectLeft", NULL);  break;
+      case (VKFLG_SHIFT | VKEY_RIGHT):  cmdManager.ExecuteCommand ("SelectRight", NULL);  break;
+      case (VKFLG_SHIFT | VKEY_UP):     cmdManager.ExecuteCommand ("SelectUp", NULL);  break;
+      case (VKFLG_SHIFT | VKEY_DOWN):   cmdManager.ExecuteCommand ("SelectDown", NULL);  break;
+      case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
+      
+      
+      case VKEY_NUMPAD_ENTER:
+        return (TRUE);
+      };
+    };
+  return (FALSE);
+  };
+  
 //-----------------------------------------------------------------------------
 INT  NCursesShell::NumDigits (INT  iValueIn)
   {
@@ -195,27 +219,33 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
 
   Location  locCursor = pBuffer->GetCursor();
   Location  locBufferCurr;
-  INT  iTopLine = 0;
-  INT  iTopCol = 0;
   INT  iScreenCol = 0;
-  INT  iMaxLine = pBuffer->GetNumLines () - 1;
+  INT  iMaxLine = pBuffer->GetNumLines () + 1;
   const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
   static INT  szFullMarkup [LINE_BUFFER_LENGTH];
-  BOOL bShowStatusLine = TRUE;
-
-  if (bShowStatusLine)
+  if (bShowStatusBar)
     {
     iHeight -= 1;
     }
     
+  // bounds check the window position
+  Location  locWindowPosition = pBuffer->GetWindowPos ();
+  INT  iTopLine = locWindowPosition.iLine;
+  INT  iTopCol = locWindowPosition.iCol;
+  
+  iTopLine = TMin (iMaxLine - iHeight, TMax (1, iTopLine));
+  iTopCol  = TMax (0, iTopCol);
+  locWindowPosition.Set (iTopLine, iTopCol);
+  pBuffer->SetWindowPos (locWindowPosition);
+  
   // Draw the line numbers
   if (bShowLineNumbers) 
     {
     INT  iMaxLineDigits = NumDigits (iMaxLine);
     for (INT  iScreenLine = 0; iScreenLine < iHeight; ++iScreenLine)
       {
-      locBufferCurr.iLine = iScreenLine + iTopLine + 1;
+      locBufferCurr.iLine = iScreenLine + iTopLine;
       if (locBufferCurr.iLine < iMaxLine)
         {
         move(iScreenLine + iScreenY,iScreenX);
@@ -249,7 +279,10 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
     iScreenX += iMaxLineDigits + 1;
     iWidth -= iMaxLineDigits + 1;
     }
-    
+
+  pBuffer->SetLinesPerPage (iHeight);
+  pBuffer->SetColPerPage (iWidth);
+  
   // Draw the main window
   // move to the starting point in the buffer
   //printf ("Processing buffer with %d lines on a screen sized %d x %d\n\n", iMaxLine, iHeight, iWidth);
@@ -257,14 +290,13 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   Location locHighlightStart = pBuffer->GetSelectionStart ();
   Location locHighlightEnd   = pBuffer->GetSelectionEnd ();
   
-  BOOL  bValidHighlight = locHighlightStart.IsValid() && locHighlightEnd.IsValid();
   INT   iHighlightFlag;
 
   for (INT  iScreenLine = iScreenY; iScreenLine < (iScreenY + iHeight); ++iScreenLine)
     {
     // TODO: determine if we are in a comment
     
-    locBufferCurr.iLine = (iScreenLine - iScreenY) + iTopLine + 1;
+    locBufferCurr.iLine = (iScreenLine - iScreenY) + iTopLine;
     
     // check and see if we are on a valid buffer line
     if (locBufferCurr.iLine < iMaxLine)
@@ -295,7 +327,7 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   static char szColNum [128];
   static char szLineNum [128];
   static char szFilename [512];
-  if (bShowStatusLine)
+  if (bShowStatusBar)
     {
     snprintf (szColNum, sizeof (szColNum), "Col : %d", locCursor.iCol);
     snprintf (szLineNum, sizeof (szLineNum), "Line: %d / %d", locCursor.iLine, iMaxLine);
@@ -347,7 +379,7 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
     {
     // move the ncurses cursor to our gap buffer cursor location
     curs_set(2);
-    move (iScreenY + locCursor.iLine - iTopLine - 1, iScreenX + locCursor.iCol - iTopCol);
+    move (iScreenY + locCursor.iLine - iTopLine, iScreenX + locCursor.iCol - iTopCol);
     }
   };
 
@@ -397,6 +429,7 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
     case 0x225:         return (VKFLG_CONTROL | VKEY_PAGEDOWN);
     case 0x230:         return (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_RIGHT);
     case 0x221:         return (VKFLG_CONTROL | VKFLG_SHIFT | VKEY_LEFT);
+    case 0x00a:         return (VKEY_ENTER);
     
     case 0x09:          return (VKEY_TAB); // replaces CTRL_I
     case KEY_DOWN:      return (VKEY_DOWN);
@@ -408,7 +441,7 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
     case KEY_BACKSPACE: return (VKEY_BACKSPACE);
     case KEY_DC:        return (VKEY_DELETE);
     case KEY_IC:        return (VKEY_INSERT);
-    case KEY_ENTER:     return (VKEY_ENTER);   // enter on numpad
+    case KEY_ENTER:     return (VKEY_NUMPAD_ENTER);   // enter on numpad
 //    case KEY_TAB:       return (VKEY_TAB);
     case KEY_NPAGE:     return (VKEY_PAGEDOWN);
     case KEY_PPAGE:     return (VKEY_PAGEUP);

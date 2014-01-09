@@ -31,7 +31,9 @@ class NCursesShell
 {
   private:
   
-    BOOL  bShowLineNumbers;
+    BOOL         bShowLineNumbers;
+    BOOL         bShowStatusBar;
+    GapBuffer *  pBufferInputFocus;
   
   public:
     NCursesShell  ();
@@ -48,6 +50,10 @@ class NCursesShell
                              INT               iWidth,
                              INT               iHeight, 
                              GapBuffer *       pBuffer,
+                             EditorSettings &  editorSettings);
+ 
+    BOOL ProcessInput       (GapBuffer *  pBufferInputFocus,
+                             CommandManager &  cmdManager,
                              EditorSettings &  editorSettings);
                          
     BOOL GetHighlightState  (Location &  locCurr,

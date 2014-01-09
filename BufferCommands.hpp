@@ -31,6 +31,7 @@ VOID InitBufferCommands (GapBufferManager *  pManagerIn,
                          FormatInfo *        pFormatIn,
                          EditorSettings *    pSettings);
 
+VOID BufferCommandsSetBuffer (GapBuffer *  pBufferIn);
 
 VOID CmdCursorUp (RStrArray *  arrayParams);
 VOID CmdCursorDown (RStrArray *  arrayParams);
@@ -67,15 +68,27 @@ VOID CursorStartLine (VOID);
 VOID CursorEndLine (VOID);
 VOID CursorNextWord (VOID);
 VOID CursorPrevWord (VOID);
+VOID CursorPageUp (VOID);
+VOID CursorPageDown (VOID);
   
 VOID SelectionCopy (VOID);
 VOID SelectionDelete (VOID);
 VOID SelectAll (VOID);
+VOID ScrollWindowUp (VOID);
+VOID ScrollWindowDown (VOID);
+VOID ScrollWindowPageUp (VOID);
+VOID ScrollWindowPageDown (VOID);
+VOID ScrollWindow (INT  iNumLinesIn);
+
 
 VOID CmdSelectionCut (RStrArray *  arrayParams);
 VOID CmdSelectionCopy (RStrArray *  arrayParams);
 VOID CmdSelectionPaste (RStrArray *  arrayParams);
 VOID CmdSelectionDelete (RStrArray *  arrayParams);
 VOID CmdSelectAll (RStrArray *  arrayParams);
+VOID CmdScrollWindowUp (RStrArray *  arrayParams);
+VOID CmdScrollWindowDown (RStrArray *  arrayParams);
+VOID CmdCursorPageUp (RStrArray *  arrayParams);
+VOID CmdCursorPageDown (RStrArray *  arrayParams);
 
 #endif // BUFFERCOMMANDS_HPP
