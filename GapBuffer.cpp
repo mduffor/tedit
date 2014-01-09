@@ -98,8 +98,9 @@ GapBuffer::GapBuffer ()
     
     SetGrowSize (DEFAULT_BUFFER_GROW_SIZE);
     
-    locCursor.Set (0,0);
-    locSelect.Set (0,0);
+    locCursor.Set (1,0);
+    locSelect = locInvalid;
+    locWindow.Set (1,0);
     
     CalcLineOffsets ();
     bModified = FALSE;
@@ -881,4 +882,14 @@ VOID  GapBuffer::MoveGapToEnd  (VOID)
   BeginEdit ();
   };
 
- 
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::MoveWindowToCursor (VOID) 
+  {
+  // adjust the window so the cursor is on it.
+  
+  locWindow.iLine = TMin (locCursor.iLine, locWindow.iLine);
+  locWindow.iLine = TMax (locCursor.iLine - iLinesPerPage + 1, locWindow.iLine);
+  
+  locWindow.iCol = TMin (locCursor.iCol, locWindow.iCol);
+  locWindow.iCol = TMax (locCursor.iCol - iColPerPage + 1, locWindow.iCol);
+  }

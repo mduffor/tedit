@@ -77,6 +77,13 @@ class GapBuffer
     
     Location     locCursor;
     Location     locSelect;
+                            // REFACTOR: Storing locWindow in the gapBuffer class limits the
+                            //  buffer to display in a single window.  Since I am not currently 
+                            //  implementing a multi-window interface, nor do I plan to support
+                            //  a buffer seen in multiple windows, this is acceptable for now.
+    Location     locWindow; /// Top left corner of window that is displaying buffer.  
+    INT          iLinesPerPage;  /// This is set by the display routine.  It is undefined if the buffer is not currently displayed.
+    INT          iColPerPage;  /// This is set by the display routine.  It is undefined if the buffer is not currently displayed.
     
     BOOL         bModified;
     BOOL         bCursorMoved;
@@ -117,6 +124,14 @@ class GapBuffer
     BOOL          IsSelectionValid (VOID)                   {return (locSelect.IsValid());};
     VOID          ClearSelection   (VOID)                   {locSelect.Set (0,0);};
 
+    Location      GetWindowPos     (VOID)                   {return locWindow;};
+    VOID          SetWindowPos     (Location &  locIn)      {locWindow = locIn;};
+    INT           GetLinesPerPage  (VOID)                   {return iLinesPerPage;};
+    VOID          SetLinesPerPage  (INT  iLinesIn)          {iLinesPerPage = iLinesIn;};     
+    INT           GetColPerPage    (VOID)                   {return iColPerPage;};
+    VOID          SetColPerPage    (INT  iColIn)            {iColPerPage = iColIn;};
+    
+    
     INT           GetChar           (VOID)                  {return (pBuffer[iGapStart + iGapSize]);};
     VOID          GetString         (char * szStringOut, 
                                      INT    iCount);
@@ -125,7 +140,7 @@ class GapBuffer
                                      INT  iCol);
     INT           LocationToOffset  (Location & locIn);
     INT           LocationToOffset  (INT  iLine, INT  iCol);
-                                     
+
     INT           GetNumChars       (VOID);
     INT           GetNumLines       (VOID);
     INT           GetLine           (INT     iLine,
@@ -181,6 +196,8 @@ class GapBuffer
     EStatus       LoadInsert            (VOID);
 
     VOID          MoveGapToEnd          (VOID);
+    VOID          MoveWindowToCursor    (VOID);
+    
 };
 
 #endif // GAPBUFFER_HPP
