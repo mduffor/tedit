@@ -28,41 +28,60 @@
 
 //=============================================================================
 class NCursesShell
-{
+  {
   private:
   
     BOOL         bShowLineNumbers;
     BOOL         bShowStatusBar;
+    
+    BOOL         bEntryFieldActive;
+    RStrArray    astrEntryFieldInput;
+    RStrArray    astrEntryFieldOutput;
+    GapBuffer    bufferEntryField;
+    RStr         strEntryFieldFinishedCommand;    
+    
     GapBuffer *  pBufferInputFocus;
+    
   
   public:
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update             (GapBuffer *       pBuffer,
-                             CommandManager &  cmdManager,
-                             EditorSettings &  editorSettings);
+    VOID Update               (GapBuffer *       pBuffer,
+                               CommandManager &  cmdManager,
+                               EditorSettings &  editorSettings);
 
-    INT  NumDigits          (INT  iValueIn);
+    INT  NumDigits            (INT  iValueIn);
 
-    VOID DisplayWindow      (INT               iScreenX, 
-                             INT               iScreenY,
-                             INT               iWidth,
-                             INT               iHeight, 
-                             GapBuffer *       pBuffer,
-                             EditorSettings &  editorSettings);
+    VOID DisplayWindow        (INT               iScreenX, 
+                               INT               iScreenY,
+                               INT               iWidth,
+                               INT               iHeight, 
+                               GapBuffer *       pBuffer,
+                               EditorSettings &  editorSettings);
  
-    BOOL ProcessInput       (GapBuffer *  pBufferInputFocus,
-                             CommandManager &  cmdManager,
-                             EditorSettings &  editorSettings);
-                         
-    BOOL GetHighlightState  (Location &  locCurr,
-                             Location &  locBegin,
-                             Location &  locEnd);
+    BOOL ProcessInput         (GapBuffer *  pBufferInputFocus,
+                               CommandManager &  cmdManager,
+                               EditorSettings &  editorSettings);
+                             
+    VOID DrawBufferEntryField (INT               iScreenX, 
+                               INT               iScreenY,
+                               INT               iWidth,
+                               GapBuffer *       pBuffer,
+                               EditorSettings &  editorSettings);
+                                          
+    BOOL GetHighlightState    (Location &  locCurr,
+                               Location &  locBegin,
+                               Location &  locEnd);
 
-    INT  NCursesToVKey      (INT  nCursesKey);
-                         
-};  
+    INT  NCursesToVKey        (INT  nCursesKey);
+
+    VOID GetInput             (const char *  szCommand,
+                               RStrArray &   astrInputFields);
+                               
+    BOOL HandleEntryFieldEnterKey (VOID);
+    
+  };  
   
 
 #endif // NCURSESSHELL_HPP

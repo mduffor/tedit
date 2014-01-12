@@ -36,7 +36,9 @@ NCursesShell::NCursesShell ()
   {
   bShowLineNumbers = TRUE;
   bShowStatusBar = TRUE;
+  bEntryFieldActive = FALSE;
   pBufferInputFocus = NULL;
+  bufferEntryField.AllocBuffer (256);
   
   initscr ();  // start ncurses
   raw ();      // disable line buffering
@@ -168,8 +170,14 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
       case VKEY_BACKSPACE: cmdManager.ExecuteCommand ("Backspace", NULL);  break;
       case VKEY_DELETE:    cmdManager.ExecuteCommand ("Delete", NULL);  break;
       case VKEY_INSERT:    editorSettings.SetInsertMode (!editorSettings.IsInsertMode());  break;
-      case VKEY_ENTER:     pBufferInputFocus->InsertChar('\n'); break;
-
+      case VKEY_ENTER:     
+        {
+        if (!HandleEntryFieldEnterKey ())
+          {
+          pBufferInputFocus->InsertChar('\n'); 
+          };
+        };
+        break;
       
       case (VKFLG_CONTROL | VKEY_RIGHT): cmdManager.ExecuteCommand ("CursorNextWord", NULL);  break;
       case (VKFLG_CONTROL | VKEY_LEFT):  cmdManager.ExecuteCommand ("CursorPrevWord", NULL);  break;
@@ -224,7 +232,10 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
   static INT  szFullMarkup [LINE_BUFFER_LENGTH];
-  if (bShowStatusBar)
+  BOOL  bGetStatusBarInput = (astrEntryFieldInput.Length () > 0) && (astrEntryFieldInput.Length () > astrEntryFieldOutput.Length());
+  BOOL  bDrawStatusBar = bShowStatusBar || bGetStatusBarInput;
+  
+  if (bDrawStatusBar)
     {
     iHeight -= 1;
     }
@@ -307,7 +318,7 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
       
       // display the line  
       iScreenCol = 0;
-      move (iScreenLine,iScreenX);
+      move (iScreenLine, iScreenX);
       locBufferCurr.iCol = iTopCol;
       for (; (iTopCol + iScreenCol < iLineLength) && (iScreenCol < iWidth); ++iScreenCol, ++locBufferCurr.iCol)
         {
@@ -327,42 +338,64 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   static char szColNum [128];
   static char szLineNum [128];
   static char szFilename [512];
-  if (bShowStatusBar)
+  if (bDrawStatusBar)
     {
     snprintf (szColNum, sizeof (szColNum), "Col : %d", locCursor.iCol);
     snprintf (szLineNum, sizeof (szLineNum), "Line: %d / %d", locCursor.iLine, iMaxLine);
     int  iColLen = strlen (szColNum);
     int  iLineLen = strlen (szLineNum);
 
-    int  iFilenameMax = iWidth - 1 - 3 - 2 - iLineLen - 2 - iColLen - 1;
+    int  iFilenameMax = iWidth - 1 - 1 - 3 - 2 - iLineLen - 2 - iColLen - 1;
+    int  iFilenameStart = 1;
+    int  iFilenameLen   = 0;
     
-    snprintf (szFilename, iFilenameMax, "%s", pBuffer->GetFileName ());
-    int  iFilenameLen = strlen (szFilename);
-    
-    
+    if (!bGetStatusBarInput) 
+      {
+      snprintf (szFilename, iFilenameMax, "%s", pBuffer->GetFileName ());
+      iFilenameLen = strlen (szFilename);
+      }
     
     INT  iStatusBarY = iScreenY + iHeight;
     attron (A_REVERSE);
-    move (iStatusBarY, 0);
+    move (iStatusBarY, iScreenX);
     addch (' ');
     addstr (szFilename);
     for (INT  iFill = 0; iFill < iFilenameMax - iFilenameLen; ++iFill)
       {
       addch (' ');
       }
+      
     if (editorSettings.IsInsertMode ())
       {
-      addstr ("INS  ");
+      addstr (" INS  ");
       }
     else
       {
-      addstr ("OVR  ");
+      addstr (" OVR  ");
       };
     addstr (szLineNum);
     addch (' ');
     addstr (szColNum);
     addch (' ');
     attroff (A_REVERSE);
+    
+    // draw status line entry field if needed  
+    if (bGetStatusBarInput)
+      {
+      INT  iInputIndex = astrEntryFieldOutput.Length ();
+      
+      move (iStatusBarY, iScreenX + iFilenameStart);
+      attron (A_REVERSE);
+      addstr (astrEntryFieldInput [iInputIndex].AsChar());
+      addstr(": ");
+      attroff (A_REVERSE);
+      
+      DrawBufferEntryField (iScreenX + iFilenameStart + astrEntryFieldInput [iInputIndex].GetLength () + 2, 
+                            iStatusBarY, 
+                            iFilenameMax - astrEntryFieldInput [iInputIndex].GetLength () - 2,
+                            &bufferEntryField,
+                            editorSettings);
+      }    
     };  
   
   
@@ -381,9 +414,68 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
     curs_set(2);
     move (iScreenY + locCursor.iLine - iTopLine, iScreenX + locCursor.iCol - iTopCol);
     }
+    
+    
+
   };
 
 
+//-----------------------------------------------------------------------------
+VOID  NCursesShell::DrawBufferEntryField (INT               iScreenX, 
+                                          INT               iScreenY,
+                                          INT               iWidth,
+                                          GapBuffer *       pBuffer,
+                                          EditorSettings &  editorSettings)
+  {
+  Location  locCursor = pBuffer->GetCursor();
+  Location  locBufferCurr;
+  INT  iScreenCol = 0;
+  const INT LINE_BUFFER_LENGTH = 512;
+  static char szLine [LINE_BUFFER_LENGTH];
+  
+  Location locHighlightStart = pBuffer->GetSelectionStart ();
+  Location locHighlightEnd   = pBuffer->GetSelectionEnd ();
+
+  Location  locWindowPosition = pBuffer->GetWindowPos ();
+  INT  iTopCol = locWindowPosition.iCol;  
+  
+  INT   iHighlightFlag;
+
+  locBufferCurr.iLine = 1;
+  
+  INT  iLineLength = pBuffer->GetLine (locBufferCurr.iLine, szLine, LINE_BUFFER_LENGTH);
+  szLine [iLineLength] = '\0';
+  
+  // display the line  
+  iScreenCol = 0;
+  move (iScreenY, iScreenX);
+  locBufferCurr.iCol = iTopCol;
+  for (; (iTopCol + iScreenCol < iLineLength) && (iScreenCol < iWidth); ++iScreenCol, ++locBufferCurr.iCol)
+    {
+    iHighlightFlag = GetHighlightState (locBufferCurr, locHighlightStart, locHighlightEnd) ? A_REVERSE : 0;
+    addch (szLine[iTopCol + iScreenCol] | iHighlightFlag);
+    }
+  for (; iScreenCol < iWidth; ++iScreenCol, ++locBufferCurr.iCol)
+    {
+    iHighlightFlag = GetHighlightState (locBufferCurr, locHighlightStart, locHighlightEnd) ? A_REVERSE : 0;
+    addch (' ' | iHighlightFlag);
+    }
+    
+  // move the cursor to the correct place
+  if (locHighlightStart.IsValid ())
+    {
+    curs_set(0);
+    move (-1, -1);
+    }
+  else
+    {
+    // move the ncurses cursor to our gap buffer cursor location
+    curs_set(2);
+    move (iScreenY + locCursor.iLine, iScreenX + locCursor.iCol - iTopCol);
+    }
+  }
+  
+  
 //-----------------------------------------------------------------------------
 BOOL  NCursesShell::GetHighlightState (Location &  locCurr,
                                        Location &  locBegin,
@@ -478,4 +570,32 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
   return (0);
   };
   
+//-----------------------------------------------------------------------------
+VOID  NCursesShell::GetInput  (const char *  szCommand,
+                               RStrArray &   astrInputFields)
+  {
+  astrEntryFieldInput.Clear ();
+  astrEntryFieldOutput.Clear ();
+  
+  astrEntryFieldInput = astrInputFields;
+  strEntryFieldFinishedCommand = szCommand;
+  bufferEntryField.Clear();
+  bufferEntryField.SetCursor (1,0);
+  };
+
+//-----------------------------------------------------------------------------
+BOOL  NCursesShell::HandleEntryFieldEnterKey (VOID)
+  {
+  // return true if we handled the keypress
+  
+  INT  iInIndex  = astrEntryFieldInput.Length ();
+  INT  iOutIndex = astrEntryFieldOutput.Length ();
+  BOOL  bEntryFieldActive = (iInIndex > 0) && (iInIndex > iOutIndex);
+  
+  if (bEntryFieldActive) 
+    {
+    
+    }
+  
+  }
   
