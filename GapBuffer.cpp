@@ -334,12 +334,7 @@ INT  GapBuffer::GetNumLines (VOID)
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::ClampLocationToValidChar (Location &  locInOut)
   {
-  if (locInOut.iLine > GetNumLines ())
-    {
-    INT  iLastLine = GetNumLines ();
-    locInOut.Set (iLastLine, GetLineLength (iLastLine));
-    return;
-    }
+  ClampLocationToValidLine (locInOut);
   
   locInOut.iCol = TMin (locInOut.iCol, GetLineLength (locInOut.iLine));
   if (locInOut.iCol < 0) 
@@ -348,10 +343,25 @@ VOID  GapBuffer::ClampLocationToValidChar (Location &  locInOut)
     }
   if (locInOut.iLine <= 0)
     {
-    locInOut = locInvalid;
+    locInOut.Set (1,0);
     }
   }
 
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::ClampLocationToValidLine (Location &  locInOut)
+  {
+  if (locInOut.iLine > GetNumLines ())
+    {
+    INT  iLastLine = GetNumLines ();
+    locInOut.Set (iLastLine, GetLineLength (iLastLine));
+    return;
+    }
+  if (locInOut.iLine <= 0) 
+    {
+    locInOut.iLine = 1;
+    }
+  }
+  
 //-----------------------------------------------------------------------------
 INT GapBuffer::GetLine (INT     iLine,
                         char *  pszBufferOut,

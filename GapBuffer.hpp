@@ -151,6 +151,7 @@ class GapBuffer
                                      Location &  locTwo);
                                      
     VOID          ClampLocationToValidChar (Location &  locInOut);
+    VOID          ClampLocationToValidLine (Location &  locInOut);
     
     BOOL          IsFileChanged (VOID);  // compare timestamp and size on disk
     VOID          SetIsModified (BOOL bModifiedIn)   {bModified = bModifiedIn;};
