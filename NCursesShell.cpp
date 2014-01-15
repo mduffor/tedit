@@ -30,15 +30,13 @@ ASSERTFILE (__FILE__)
 #include "SyntaxParser.hpp"
 #include "VKeys.hpp"
 #include "BufferCommands.hpp"
+#include "EntryFieldHandler.hpp"
 
 //-----------------------------------------------------------------------------
 NCursesShell::NCursesShell ()
   {
   bShowLineNumbers = TRUE;
   bShowStatusBar = TRUE;
-  bEntryFieldActive = FALSE;
-  pBufferInputFocus = NULL;
-  bufferEntryField.AllocBuffer (256);
   
   initscr ();  // start ncurses
   raw ();      // disable line buffering
@@ -64,17 +62,11 @@ NCursesShell::~NCursesShell ()
   };
 
 //-----------------------------------------------------------------------------
-VOID NCursesShell::Update (GapBuffer *       pBuffer, 
-                           CommandManager &  cmdManager,
-                           EditorSettings &  editorSettings)
+VOID NCursesShell::Update (GapBuffer *          pBuffer, 
+                           CommandManager &     cmdManager,
+                           EditorSettings &     editorSettings,
+                           EntryFieldHandler &  entryFieldHandler)
   {
-  //GapBuffer *  pBufferKeyFocus = pBuffer;
-  
-  if (pBufferInputFocus == NULL) 
-    {
-    pBufferInputFocus = pBuffer;
-    };
-  
   if (pBuffer == NULL)
     {
     // no buffer.  Error
@@ -107,28 +99,34 @@ VOID NCursesShell::Update (GapBuffer *       pBuffer,
   BOOL  bExit = FALSE;
   while (!bExit) 
     {
+    GapBuffer *  pBufferInputFocus = pBuffer;
+    
+    if (entryFieldHandler.IsActive ())
+      {
+      pBufferInputFocus = &(entryFieldHandler.GetBuffer ());
+      }
+    
     DisplayWindow (0, 5,
                   iColMax, 20, // iColMax, iRowMax, 
                   pBuffer,
-                  editorSettings);
+                  editorSettings,
+                  entryFieldHandler);
     //refresh();
 
-    bExit = ProcessInput (pBufferInputFocus, cmdManager, editorSettings);
-      
-    //move(0,0);
-    //printw("char : %d            ", ch);
-                  
+    bExit = ProcessInput (pBufferInputFocus, pBuffer, cmdManager, editorSettings, entryFieldHandler);
     refresh();
     }
   };
 
 //-----------------------------------------------------------------------------
-BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
-                                 CommandManager &  cmdManager,
-                                 EditorSettings &  editorSettings)
+BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
+                                 GapBuffer *          pDisplayBuffer,
+                                 CommandManager &     cmdManager,
+                                 EditorSettings &     editorSettings,
+                                 EntryFieldHandler &  entryFieldHandler)
   {
   
-  BufferCommandsSetBuffer (pBufferInputFocus);
+  BufferCommandsSetBuffer (pInputBuffer, pDisplayBuffer);
 
   INT vKey = NCursesToVKey(getch());
   
@@ -136,7 +134,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
     {
     // standard printable ASCII key
     
-    if (pBufferInputFocus->IsSelectionValid())
+    if (pInputBuffer->IsSelectionValid ())
       {
       cmdManager.ExecuteCommand ("SelectionDelete", NULL);
       }
@@ -144,11 +142,11 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
       {
       if (editorSettings.IsInsertMode ())
         {
-        pBufferInputFocus->InsertChar(vKey);
+        pInputBuffer->InsertChar(vKey);
         }
       else
         {
-        pBufferInputFocus->ReplaceChar(vKey);
+        pInputBuffer->ReplaceChar(vKey);
         }
       }
     }
@@ -164,7 +162,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
       case VKEY_PAGEUP:    cmdManager.ExecuteCommand ("CursorPageUp", NULL);  break;
       case VKEY_LEFT:      cmdManager.ExecuteCommand ("CursorLeft", NULL);  break;
       case VKEY_RIGHT:     cmdManager.ExecuteCommand ("CursorRight", NULL);  break;
-      case VKEY_TAB:       pBufferInputFocus->InsertString (editorSettings.GetTabString()); 
+      case VKEY_TAB:       pInputBuffer->InsertString (editorSettings.GetTabString()); 
       case VKEY_HOME:      cmdManager.ExecuteCommand ("CursorStartLine", NULL);  break;
       case VKEY_END:       cmdManager.ExecuteCommand ("CursorEndLine", NULL);  break;
       case VKEY_BACKSPACE: cmdManager.ExecuteCommand ("Backspace", NULL);  break;
@@ -172,9 +170,13 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
       case VKEY_INSERT:    editorSettings.SetInsertMode (!editorSettings.IsInsertMode());  break;
       case VKEY_ENTER:     
         {
-        if (!HandleEntryFieldEnterKey ())
+        if (entryFieldHandler.IsActive ())
           {
-          pBufferInputFocus->InsertChar('\n'); 
+          entryFieldHandler.HandleEnterKey (cmdManager);
+          }
+        else
+          {
+          pInputBuffer->InsertChar('\n'); 
           };
         };
         break;
@@ -192,6 +194,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *  pBufferInputFocus,
       case (VKFLG_SHIFT | VKEY_UP):     cmdManager.ExecuteCommand ("SelectUp", NULL);  break;
       case (VKFLG_SHIFT | VKEY_DOWN):   cmdManager.ExecuteCommand ("SelectDown", NULL);  break;
       case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
+      case (CTRL_G):                    cmdManager.ExecuteCommand ("GotoLinePrompt", NULL);  break;
       
       
       case VKEY_NUMPAD_ENTER:
@@ -216,12 +219,13 @@ INT  NCursesShell::NumDigits (INT  iValueIn)
 
   
 //-----------------------------------------------------------------------------
-VOID NCursesShell::DisplayWindow (INT               iScreenX, 
-                                  INT               iScreenY,
-                                  INT               iWidth,
-                                  INT               iHeight, 
-                                  GapBuffer *       pBuffer,
-                                  EditorSettings &  editorSettings)
+VOID NCursesShell::DisplayWindow (INT                  iScreenX, 
+                                  INT                  iScreenY,
+                                  INT                  iWidth,
+                                  INT                  iHeight, 
+                                  GapBuffer *          pBuffer,
+                                  EditorSettings &     editorSettings,
+                                  EntryFieldHandler &  entryFieldHandler)
   {
   SyntaxParser  syntaxParser;
 
@@ -232,7 +236,7 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
   static INT  szFullMarkup [LINE_BUFFER_LENGTH];
-  BOOL  bGetStatusBarInput = (astrEntryFieldInput.Length () > 0) && (astrEntryFieldInput.Length () > astrEntryFieldOutput.Length());
+  BOOL  bGetStatusBarInput = entryFieldHandler.IsActive ();
   BOOL  bDrawStatusBar = bShowStatusBar || bGetStatusBarInput;
   
   if (bDrawStatusBar)
@@ -349,17 +353,18 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
     int  iFilenameStart = 1;
     int  iFilenameLen   = 0;
     
-    if (!bGetStatusBarInput) 
-      {
-      snprintf (szFilename, iFilenameMax, "%s", pBuffer->GetFileName ());
-      iFilenameLen = strlen (szFilename);
-      }
+
     
     INT  iStatusBarY = iScreenY + iHeight;
     attron (A_REVERSE);
     move (iStatusBarY, iScreenX);
     addch (' ');
-    addstr (szFilename);
+    if (!bGetStatusBarInput) 
+      {
+      snprintf (szFilename, iFilenameMax, "%s", pBuffer->GetFileName ());
+      iFilenameLen = strlen (szFilename);
+      addstr (szFilename);
+      }
     for (INT  iFill = 0; iFill < iFilenameMax - iFilenameLen; ++iFill)
       {
       addch (' ');
@@ -382,18 +387,18 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
     // draw status line entry field if needed  
     if (bGetStatusBarInput)
       {
-      INT  iInputIndex = astrEntryFieldOutput.Length ();
-      
       move (iStatusBarY, iScreenX + iFilenameStart);
       attron (A_REVERSE);
-      addstr (astrEntryFieldInput [iInputIndex].AsChar());
+      addstr (entryFieldHandler.GetInputField ().AsChar ());
       addstr(": ");
       attroff (A_REVERSE);
       
-      DrawBufferEntryField (iScreenX + iFilenameStart + astrEntryFieldInput [iInputIndex].GetLength () + 2, 
+      INT  iEntryFieldInputLength = entryFieldHandler.GetInputField ().GetLength ();
+      
+      DrawBufferEntryField (iScreenX + iFilenameStart + iEntryFieldInputLength + 2, 
                             iStatusBarY, 
-                            iFilenameMax - astrEntryFieldInput [iInputIndex].GetLength () - 2,
-                            &bufferEntryField,
+                            iFilenameMax - iEntryFieldInputLength - 2,
+                            entryFieldHandler.GetBuffer (),
                             editorSettings);
       }    
     };  
@@ -403,17 +408,20 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
   //printw("selectStart %d %d  cursor %d %d", locHighlightStart.iLine, locHighlightStart.iCol, locCursor.iLine, locCursor.iCol);
   
   // move the cursor to the correct place
-  if (locHighlightStart.IsValid ())
+  if (!entryFieldHandler.IsActive ())
     {
-    curs_set(0);
-    move (-1, -1);
-    }
-  else
-    {
-    // move the ncurses cursor to our gap buffer cursor location
-    curs_set(2);
-    move (iScreenY + locCursor.iLine - iTopLine, iScreenX + locCursor.iCol - iTopCol);
-    }
+    if (locHighlightStart.IsValid ())
+      {
+      curs_set(0);
+      move (-1, -1);
+      }
+    else
+      {
+      // move the ncurses cursor to our gap buffer cursor location
+      curs_set(2);
+      move (iScreenY + locCursor.iLine - iTopLine, iScreenX + locCursor.iCol - iTopCol);
+      }
+    };
     
     
 
@@ -424,26 +432,26 @@ VOID NCursesShell::DisplayWindow (INT               iScreenX,
 VOID  NCursesShell::DrawBufferEntryField (INT               iScreenX, 
                                           INT               iScreenY,
                                           INT               iWidth,
-                                          GapBuffer *       pBuffer,
+                                          GapBuffer &       buffer,
                                           EditorSettings &  editorSettings)
   {
-  Location  locCursor = pBuffer->GetCursor();
+  Location  locCursor = buffer.GetCursor();
   Location  locBufferCurr;
   INT  iScreenCol = 0;
   const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
   
-  Location locHighlightStart = pBuffer->GetSelectionStart ();
-  Location locHighlightEnd   = pBuffer->GetSelectionEnd ();
+  Location locHighlightStart = buffer.GetSelectionStart ();
+  Location locHighlightEnd   = buffer.GetSelectionEnd ();
 
-  Location  locWindowPosition = pBuffer->GetWindowPos ();
+  Location  locWindowPosition = buffer.GetWindowPos ();
   INT  iTopCol = locWindowPosition.iCol;  
   
   INT   iHighlightFlag;
 
   locBufferCurr.iLine = 1;
   
-  INT  iLineLength = pBuffer->GetLine (locBufferCurr.iLine, szLine, LINE_BUFFER_LENGTH);
+  INT  iLineLength = buffer.GetLine (locBufferCurr.iLine, szLine, LINE_BUFFER_LENGTH);
   szLine [iLineLength] = '\0';
   
   // display the line  
@@ -471,7 +479,7 @@ VOID  NCursesShell::DrawBufferEntryField (INT               iScreenX,
     {
     // move the ncurses cursor to our gap buffer cursor location
     curs_set(2);
-    move (iScreenY + locCursor.iLine, iScreenX + locCursor.iCol - iTopCol);
+    move (iScreenY + locCursor.iLine - 1, iScreenX + locCursor.iCol - iTopCol);
     }
   }
   
@@ -570,32 +578,4 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
   return (0);
   };
   
-//-----------------------------------------------------------------------------
-VOID  NCursesShell::GetInput  (const char *  szCommand,
-                               RStrArray &   astrInputFields)
-  {
-  astrEntryFieldInput.Clear ();
-  astrEntryFieldOutput.Clear ();
-  
-  astrEntryFieldInput = astrInputFields;
-  strEntryFieldFinishedCommand = szCommand;
-  bufferEntryField.Clear();
-  bufferEntryField.SetCursor (1,0);
-  };
-
-//-----------------------------------------------------------------------------
-BOOL  NCursesShell::HandleEntryFieldEnterKey (VOID)
-  {
-  // return true if we handled the keypress
-  
-  INT  iInIndex  = astrEntryFieldInput.Length ();
-  INT  iOutIndex = astrEntryFieldOutput.Length ();
-  BOOL  bEntryFieldActive = (iInIndex > 0) && (iInIndex > iOutIndex);
-  
-  if (bEntryFieldActive) 
-    {
-    
-    }
-  
-  }
   

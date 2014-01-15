@@ -101,6 +101,7 @@ void CommandTest::testCommand ()
   GapBufferManager *  pManager = new GapBufferManager;
   FormatInfo *        pFormat = new FormatInfo;
   EditorSettings *    pSettings = new EditorSettings;
+  EntryFieldHandler   entryFieldHandler;
   
   pManager->CreateBuffer ("TestBuffer");
   GapBuffer *  gapBuffer = pManager->GetBuffer ("TestBuffer");
@@ -117,7 +118,7 @@ void CommandTest::testCommand ()
 
   // test buffer commands
   CommandManager     cmdManager;  
-  InitBufferCommands (pManager, cmdManager, pFormat, pSettings);
+  InitBufferCommands (pManager, cmdManager, pFormat, pSettings, &entryFieldHandler);
   
   
   gapBuffer->SetCursor (3, 1);

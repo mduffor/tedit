@@ -25,6 +25,7 @@
 #include "GapBuffer.hpp"
 #include "Command.hpp"
 #include "EditorSettings.hpp"
+#include "EntryFieldHandler.hpp"
 
 //=============================================================================
 class NCursesShell
@@ -34,40 +35,35 @@ class NCursesShell
     BOOL         bShowLineNumbers;
     BOOL         bShowStatusBar;
     
-    BOOL         bEntryFieldActive;
-    RStrArray    astrEntryFieldInput;
-    RStrArray    astrEntryFieldOutput;
-    GapBuffer    bufferEntryField;
-    RStr         strEntryFieldFinishedCommand;    
-    
-    GapBuffer *  pBufferInputFocus;
-    
-  
   public:
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update               (GapBuffer *       pBuffer,
-                               CommandManager &  cmdManager,
-                               EditorSettings &  editorSettings);
+    VOID Update               (GapBuffer *          pBuffer,
+                               CommandManager &     cmdManager,
+                               EditorSettings &     editorSettings,
+                               EntryFieldHandler &  entryFieldHandler);
 
     INT  NumDigits            (INT  iValueIn);
 
-    VOID DisplayWindow        (INT               iScreenX, 
-                               INT               iScreenY,
-                               INT               iWidth,
-                               INT               iHeight, 
-                               GapBuffer *       pBuffer,
-                               EditorSettings &  editorSettings);
+    VOID DisplayWindow        (INT                  iScreenX, 
+                               INT                  iScreenY,
+                               INT                  iWidth,
+                               INT                  iHeight, 
+                               GapBuffer *          pBuffer,
+                               EditorSettings &     editorSettings,
+                               EntryFieldHandler &  entryFieldHandler);
  
-    BOOL ProcessInput         (GapBuffer *  pBufferInputFocus,
-                               CommandManager &  cmdManager,
-                               EditorSettings &  editorSettings);
+    BOOL ProcessInput         (GapBuffer *          pInputBuffer,
+                               GapBuffer *          pDisplayBuffer,
+                               CommandManager &     cmdManager,
+                               EditorSettings &     editorSettings,
+                               EntryFieldHandler &  entryFieldHandler);
                              
     VOID DrawBufferEntryField (INT               iScreenX, 
                                INT               iScreenY,
                                INT               iWidth,
-                               GapBuffer *       pBuffer,
+                               GapBuffer &       buffer,
                                EditorSettings &  editorSettings);
                                           
     BOOL GetHighlightState    (Location &  locCurr,
@@ -76,10 +72,6 @@ class NCursesShell
 
     INT  NCursesToVKey        (INT  nCursesKey);
 
-    VOID GetInput             (const char *  szCommand,
-                               RStrArray &   astrInputFields);
-                               
-    BOOL HandleEntryFieldEnterKey (VOID);
     
   };  
   

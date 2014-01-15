@@ -26,6 +26,7 @@
 #include "EditorSettings.hpp"
 #include "Command.hpp"
 #include "BufferCommands.hpp"
+#include "EntryFieldHandler.hpp"
 
 
 #include "Debug.hpp"
@@ -40,6 +41,7 @@ int main (int argc, char *argv[])
   FormatInfo *        pFormat = new FormatInfo;
   EditorSettings *    pSettings = new EditorSettings;
   CommandManager      cmdManager;  
+  EntryFieldHandler   entryFieldHandler;
   
   
   pGapManager->CreateBuffer ("TestBuffer");
@@ -55,7 +57,7 @@ int main (int argc, char *argv[])
 
   
   const char * szRawBuffer = gapBuffer->GetBuffer();
-  InitBufferCommands (pGapManager, cmdManager, pFormat, pSettings);
+  InitBufferCommands (pGapManager, cmdManager, pFormat, pSettings, &entryFieldHandler);
                          
   //printf ("%s\n", szRawBuffer);
   //printf ("Line Length 0: %d\n", gapBuffer->GetLineLength(0));
@@ -68,7 +70,7 @@ int main (int argc, char *argv[])
   
   
   NCursesShell *  pShell = new NCursesShell ();
-  pShell->Update (gapBuffer, cmdManager, *pSettings);
+  pShell->Update (gapBuffer, cmdManager, *pSettings, entryFieldHandler);
   delete (pShell);
   
   return (0);

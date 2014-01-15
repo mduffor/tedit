@@ -25,13 +25,16 @@
 #include "Command.hpp"
 #include "FormatInfo.hpp"
 #include "EditorSettings.hpp"
+#include "EntryFieldHandler.hpp"
 
-VOID InitBufferCommands (GapBufferManager *  pManagerIn,
-                         CommandManager &    cmdManagerIn,
-                         FormatInfo *        pFormatIn,
-                         EditorSettings *    pSettings);
+VOID InitBufferCommands (GapBufferManager *   pManagerIn,
+                         CommandManager &     cmdManagerIn,
+                         FormatInfo *         pFormatIn,
+                         EditorSettings *     pSettings,
+                         EntryFieldHandler *  pEntryFieldHandlerIn);
 
-VOID BufferCommandsSetBuffer (GapBuffer *  pBufferIn);
+VOID BufferCommandsSetBuffer (GapBuffer *  pInputBufferIn,
+                              GapBuffer *  pDisplayBufferIn);
 
 VOID CmdCursorUp (RStrArray *  arrayParams);
 VOID CmdCursorDown (RStrArray *  arrayParams);
@@ -90,5 +93,9 @@ VOID CmdScrollWindowUp (RStrArray *  arrayParams);
 VOID CmdScrollWindowDown (RStrArray *  arrayParams);
 VOID CmdCursorPageUp (RStrArray *  arrayParams);
 VOID CmdCursorPageDown (RStrArray *  arrayParams);
+
+VOID CmdGotoLinePrompt (RStrArray *  arrayParams);
+VOID CmdGotoLine (RStrArray *  arrayParams);
+
 
 #endif // BUFFERCOMMANDS_HPP
