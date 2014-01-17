@@ -177,6 +177,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
         else
           {
           pInputBuffer->InsertChar('\n'); 
+          CursorIndent ();
           };
         };
         break;
@@ -197,7 +198,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
       case (CTRL_G):                    cmdManager.ExecuteCommand ("GotoLinePrompt", NULL);  break;
       
       
-      case VKEY_NUMPAD_ENTER:
+      case (CTRL_Q):
         return (TRUE);
       };
     };

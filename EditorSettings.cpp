@@ -28,6 +28,9 @@ ASSERTFILE (__FILE__)
 //-----------------------------------------------------------------------------
 EditorSettings::EditorSettings ()
   {
+  iTabSize = 2;
+  bIndentOn = TRUE;
+  bIndentOnBracket = FALSE;
   };
   
 //-----------------------------------------------------------------------------
@@ -59,3 +62,18 @@ const char *  EditorSettings::GetTabString  (VOID)
   // TODO: Replace with tabs or spaces equal to tab size. 
   return ("  ");
   }
+  
+//-----------------------------------------------------------------------------
+BOOL  EditorSettings::IsIndentOpenBracket  (INT  iCharIn)
+  {
+  // TODO: Make configurable
+  return (iCharIn == '{');
+  }
+
+//-----------------------------------------------------------------------------
+BOOL  EditorSettings::IsIndentCloseBracket (INT  iCharIn)
+  {
+  // TODO: Make configurable
+  return (iCharIn == '}');
+  }
+  

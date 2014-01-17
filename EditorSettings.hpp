@@ -30,19 +30,27 @@ class EditorSettings
   private:
     RStr  strClipBuffer;
     BOOL  bInsertMode;
+    INT   iTabSize;
+    BOOL  bIndentOn;
+    BOOL  bIndentOnBracket;
     
   public:
   
     EditorSettings ();
     ~EditorSettings ();
     
-    VOID          SaveClip     (const char *  szClipIn);
-    VOID          ClearClip    (VOID);
-    RStr &        GetClip      (VOID);
-    const char *  GetTabString (VOID);
+    VOID          SaveClip             (const char *  szClipIn);
+    VOID          ClearClip            (VOID);
+    RStr &        GetClip              (VOID);
+    const char *  GetTabString         (VOID);
+    INT           GetTabSize           (VOID)          {return iTabSize;};
+    BOOL          IndentOn             (VOID)          {return bIndentOn;};
+    BOOL          IndentOnBracket      (VOID)          {return bIndentOnBracket;};
+    BOOL          IsIndentOpenBracket  (INT  iCharIn);
+    BOOL          IsIndentCloseBracket (INT  iCharIn);
     
-    BOOL          IsInsertMode  (VOID)      {return bInsertMode;};
-    VOID          SetInsertMode (BOOL bIn)  {bInsertMode = bIn;};
+    BOOL          IsInsertMode         (VOID)          {return bInsertMode;};
+    VOID          SetInsertMode        (BOOL bIn)      {bInsertMode = bIn;};
     
   };
 

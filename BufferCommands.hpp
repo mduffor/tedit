@@ -71,6 +71,7 @@ VOID CursorStartLine (VOID);
 VOID CursorEndLine (VOID);
 VOID CursorNextWord (VOID);
 VOID CursorPrevWord (VOID);
+VOID CursorIndent (VOID);
 VOID CursorPageUp (VOID);
 VOID CursorPageDown (VOID);
   

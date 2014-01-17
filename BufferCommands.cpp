@@ -488,6 +488,71 @@ VOID CursorPrevWord (VOID)
   };
 
 //-----------------------------------------------------------------------------
+VOID CursorIndent (VOID)
+  {
+  // This function assumes that we are on the line created when the enter
+  //  has been pressed.  We need to read the previous line(s) to find the
+  //  indentation level and what character starts the previous line.  Then
+  //  we either insert spaces to properly indent this line (if not a blank line)
+  //  or move the cursor so new spaces are added once typing resumes.
+
+  if (!pSettings->IndentOn ()) return;
+  
+  // First, find the indentation level
+  INT  iIndentation = 0;
+  
+  Location  locCursor = pInputBuffer->GetCursor ();
+  Location  locSearch = Location (locCursor.iLine - 1, 0);
+
+  if (locCursor.iLine <= 1) return;
+  
+  // step backwards through lines
+  do 
+    {
+    // step forwards through characters
+    INT  iLineLength = pInputBuffer->GetLineLength (locSearch.iLine);
+    INT  iLineIndent = 0;
+    
+    for (INT  iCol = 0; iCol < iLineLength; ++iCol)
+      {
+      INT  iChar = pInputBuffer->GetCharAtLocation (locSearch.iLine, iCol);
+      if (iChar == ' ') 
+        {
+        ++iLineIndent;
+        }
+      else if (iChar == '\t')
+        {
+        iLineIndent += pSettings->GetTabSize ();
+        }
+      else
+        {
+        // found end of line
+        if (pSettings->IndentOnBracket ())
+          {
+          if (pSettings->IsIndentOpenBracket (iChar))
+            {
+            iLineIndent += pSettings->GetTabSize ();
+            };
+          }
+        else
+          {
+          if (pSettings->IsIndentCloseBracket (iChar))
+            {
+            iLineIndent = TMax (0, iLineIndent - pSettings->GetTabSize ());
+            };
+          };
+          
+        locCursor.Set (locCursor.iLine, iLineIndent);
+        pInputBuffer->SetCursor (locCursor);
+        return;
+        }
+      };
+    locSearch.Set (locSearch.iLine - 1, 0);
+    } while (locSearch.iLine > 0);
+  }
+  
+  
+//-----------------------------------------------------------------------------
 VOID SelectionCopy (VOID)
   {
   Location locBegin = pInputBuffer->GetSelectionStart ();
