@@ -577,6 +577,7 @@ VOID  GapBuffer::InsertChar  (INT iCharIn)
         }
       }
     }
+  MoveWindowToCursor ();
   };
   
 //-----------------------------------------------------------------------------
