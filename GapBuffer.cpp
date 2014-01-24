@@ -104,6 +104,8 @@ GapBuffer::GapBuffer ()
     
     CalcLineOffsets ();
     bModified = FALSE;
+    bSearchValid = FALSE;
+    strSearchTerm.Empty();
   };
   
 //-----------------------------------------------------------------------------
@@ -138,6 +140,9 @@ VOID  GapBuffer::Clear ()
     iGapSize    = iBufferSize - 1;
     SetCursor (1, 0);
     CalcLineOffsets ();
+    bModified = TRUE;
+    bSearchValid = FALSE;
+    strSearchTerm.Empty();
     };
   };
 
@@ -319,6 +324,29 @@ INT  GapBuffer::LocationToOffset (INT  iLine, INT  iCol)
   return (iOffset);
   }
 
+//-----------------------------------------------------------------------------
+Location  GapBuffer::OffsetToLocation (INT  iOffsetIn)
+  {
+  Location  locReturn;
+  
+  if (iOffsetIn <= 0) 
+    {
+    return (Location (1, 0));
+    }
+  
+  // find the line
+  INT  iNumLines = GetNumLines ();
+  for (INT  iIndex = 1; iIndex <= iNumLines; ++iIndex)
+    {
+    if (iOffsetIn < aiLineOffsets[iIndex])
+      {
+      return (Location (iIndex - 1, iOffsetIn - aiLineOffsets [iIndex - 1]));
+      }
+    }
+  // offset is beyond the valid end of the buffer
+  return (Location (GetNumLines (), GetLineLength (GetNumLines ())));
+  };
+  
 //-----------------------------------------------------------------------------
 INT  GapBuffer::GetNumChars (VOID)
   {
@@ -578,6 +606,7 @@ VOID  GapBuffer::InsertChar  (INT iCharIn)
       }
     }
   MoveWindowToCursor ();
+  SetIsModified (TRUE);
   };
   
 //-----------------------------------------------------------------------------
@@ -617,6 +646,7 @@ VOID  GapBuffer::InsertString  (const char *  szStringIn)
       locCursor.iCol = iGapStart - iSearch;
       }
     }
+  SetIsModified (TRUE);
   };
   
 //-----------------------------------------------------------------------------
@@ -687,7 +717,7 @@ VOID  GapBuffer::DeleteChars   (INT iCountIn)
       break;  
       };
     };
-  
+  SetIsModified (TRUE);
   };
   
 //-----------------------------------------------------------------------------
@@ -836,6 +866,7 @@ EStatus  GapBuffer::Load  (VOID)
   iGapStart = iFileSize;
   iGapSize -= iFileSize;
   CalcLineOffsets ();
+  SetIsModified (FALSE);
   return (eStatus);
   };
   
@@ -860,6 +891,7 @@ EStatus  GapBuffer::Save  (VOID)
                                      iSecondLength,
                                      (unsigned char *) &pBuffer[iGapStart + iGapSize]);
     };
+  SetIsModified (FALSE);
   return (eStatus);
   };
 
@@ -881,6 +913,7 @@ EStatus  GapBuffer::LoadInsert  (VOID)
   iGapStart += iFileSize;
   iGapSize -= iFileSize;
   CalcLineOffsets ();
+  SetIsModified (TRUE);
   return (eStatus);
   };
 
@@ -904,3 +937,89 @@ VOID  GapBuffer::MoveWindowToCursor (VOID)
   locWindow.iCol = TMin (locCursor.iCol, locWindow.iCol);
   locWindow.iCol = TMax (locCursor.iCol - iColPerPage + 1, locWindow.iCol);
   }
+
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::FindAll (const char *  szRegExIn)
+  {
+  const char *  pszMatch;
+  INT32         iMatchSize;
+
+  if ((bSearchValid) && (szRegExIn == strSearchTerm))
+    {
+    // already set up
+    return;
+    }
+
+  bSearchValid = TRUE;
+  MoveGapToEnd ();
+  strSearchTerm = szRegExIn;
+  RegEx   rex (szRegExIn);
+  
+  // Find every occurance of the search string in the buffer.  Store offsets in int array
+  aiSearchOffsets.Clear ();
+  aiSearchSizes.Clear ();
+  
+  INT  iIndex = 0;
+  while (iIndex < iGapStart)
+    {
+    rex.Match (pBuffer, iGapStart, iIndex, &pszMatch, iMatchSize, NULL);
+
+    if (pszMatch == NULL)
+      {
+      break;
+      };
+    aiSearchOffsets.Append (pszMatch - pBuffer);
+    aiSearchSizes.Append (iMatchSize);
+    iIndex = pszMatch - pBuffer + iMatchSize;
+    }
+  }
+  
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::CursorToFindNext (BOOL  bWrapSearch)
+  {
+  INT  iCurrentOffset = LocationToOffset (locCursor);
+  INT  iNumMatches = aiSearchOffsets.Length();
+  if (iNumMatches == 0) return;
+  for (INT  iIndex = 0; iIndex < iNumMatches; ++iIndex)
+    {
+    if (iCurrentOffset <= aiSearchOffsets[iIndex]) 
+      {
+      locCursor = OffsetToLocation (aiSearchOffsets[iIndex]);
+      locSelect = OffsetToLocation (aiSearchOffsets[iIndex] + aiSearchSizes[iIndex]);
+      return;
+      }
+    }
+  if (bWrapSearch)
+    {
+    locCursor = OffsetToLocation (aiSearchOffsets[0]);
+    locSelect = OffsetToLocation (aiSearchOffsets[0] + aiSearchSizes[0]);
+    }
+  }
+  
+//-----------------------------------------------------------------------------
+VOID  GapBuffer::CursorToFindPrev (BOOL  bWrapSearch)
+  {
+  INT  iCurrentOffset = LocationToOffset (locCursor);
+  INT  iNumMatches = aiSearchOffsets.Length();
+  if (iNumMatches == 0) return;
+  for (INT  iIndex = 0; iIndex < iNumMatches; ++iIndex)
+    {
+    if (iCurrentOffset <= aiSearchOffsets[iIndex]) 
+      {
+      if (iIndex > 0)
+        {
+        locCursor = OffsetToLocation (aiSearchOffsets[iIndex - 1]);
+        locSelect = OffsetToLocation (aiSearchOffsets[iIndex - 1] + aiSearchSizes[iIndex - 1]);
+        return;
+        }
+      break;
+      }
+    }
+  if (bWrapSearch)
+    {
+    locCursor = OffsetToLocation (aiSearchOffsets[iNumMatches - 1]);
+    locSelect = OffsetToLocation (aiSearchOffsets[iNumMatches - 1] + aiSearchSizes[iNumMatches - 1]);
+    }
+  }
+  
+  

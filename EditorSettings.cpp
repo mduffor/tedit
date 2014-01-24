@@ -31,6 +31,7 @@ EditorSettings::EditorSettings ()
   iTabSize = 2;
   bIndentOn = TRUE;
   bIndentOnBracket = FALSE;
+  bWrapSearchMode = TRUE;
   };
   
 //-----------------------------------------------------------------------------

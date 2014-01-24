@@ -101,6 +101,8 @@ VOID InitBufferCommands (GapBufferManager *   pBufferManagerIn,
   cmdManagerIn.AddCommand ("Delete", CmdDelete);
   cmdManagerIn.AddCommand ("GotoLinePrompt", CmdGotoLinePrompt);
   cmdManagerIn.AddCommand ("GotoLine", CmdGotoLine);
+  cmdManagerIn.AddCommand ("FindTextPrompt", CmdFindTextPrompt);
+  cmdManagerIn.AddCommand ("FindText", CmdFindText);
   };
 
 //-----------------------------------------------------------------------------
@@ -743,4 +745,27 @@ VOID CmdGotoLine (RStrArray *  arrayParams)
   // TODO: Undo
   };  
   
+//-----------------------------------------------------------------------------
+VOID CmdFindTextPrompt (RStrArray *  arrayParams)
+  {
+  RStrArray    astrInputFields;
+  
+  astrInputFields.SetLength (1);
+  astrInputFields[0].Set ("Find");
+  pEntryFieldHandler->StartInput ("FindText", astrInputFields);  
+  
+  // TODO: Undo
+  };  
+    
+//-----------------------------------------------------------------------------
+VOID CmdFindText (RStrArray *  arrayParams)
+  {
+  ASSERT (arrayParams != NULL);
+  ASSERT (arrayParams->Length () >= 1);
+
+  pDisplayBuffer->FindAll ((*arrayParams)[0].AsChar());
+  pDisplayBuffer->CursorToFindNext (pSettings->IsWrapSearchMode ());
+  pDisplayBuffer->MoveWindowToCursor ();
+  // TODO: Undo
+  };  
   

@@ -90,6 +90,11 @@ class GapBuffer
     
     IntArray     aiLineOffsets;
     
+    BOOL         bSearchValid;
+    RStr         strSearchTerm;
+    IntArray     aiSearchOffsets;
+    IntArray     aiSearchSizes;
+    
   public:
     
                   GapBuffer   ();
@@ -141,6 +146,8 @@ class GapBuffer
     INT           LocationToOffset  (Location & locIn);
     INT           LocationToOffset  (INT  iLine, INT  iCol);
 
+    Location      OffsetToLocation  (INT  iOffsetIn);
+
     INT           GetNumChars       (VOID);
     INT           GetNumLines       (VOID);
     INT           GetLine           (INT     iLine,
@@ -154,7 +161,7 @@ class GapBuffer
     VOID          ClampLocationToValidLine (Location &  locInOut);
     
     BOOL          IsFileChanged (VOID);  // compare timestamp and size on disk
-    VOID          SetIsModified (BOOL bModifiedIn)   {bModified = bModifiedIn;};
+    VOID          SetIsModified (BOOL bModifiedIn)   {bModified = bModifiedIn; bSearchValid = FALSE;};
     BOOL          GetIsModified (VOID)               {return (bModified);};
     
                                 /** @brief Prepares the gap buffer for insertion, deletion, and repacing by moving the gap start to the cursor position.
@@ -198,6 +205,10 @@ class GapBuffer
 
     VOID          MoveGapToEnd          (VOID);
     VOID          MoveWindowToCursor    (VOID);
+
+    VOID          FindAll               (const char *  szRegExIn);
+    VOID          CursorToFindNext      (BOOL  bWrapSearch);
+    VOID          CursorToFindPrev      (BOOL  bWrapSearch);
     
 };
 

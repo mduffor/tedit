@@ -97,6 +97,8 @@ VOID CmdCursorPageDown (RStrArray *  arrayParams);
 
 VOID CmdGotoLinePrompt (RStrArray *  arrayParams);
 VOID CmdGotoLine (RStrArray *  arrayParams);
+VOID CmdFindTextPrompt (RStrArray *  arrayParams);
+VOID CmdFindText (RStrArray *  arrayParams);
 
 
 #endif // BUFFERCOMMANDS_HPP

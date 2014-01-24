@@ -196,6 +196,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
       case (VKFLG_SHIFT | VKEY_DOWN):   cmdManager.ExecuteCommand ("SelectDown", NULL);  break;
       case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
       case (CTRL_G):                    cmdManager.ExecuteCommand ("GotoLinePrompt", NULL);  break;
+      case (CTRL_F):                    cmdManager.ExecuteCommand ("FindTextPrompt", NULL);  break;
       
       
       case (CTRL_Q):

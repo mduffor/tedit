@@ -33,6 +33,7 @@ class EditorSettings
     INT   iTabSize;
     BOOL  bIndentOn;
     BOOL  bIndentOnBracket;
+    BOOL  bWrapSearchMode;
     
   public:
   
@@ -51,6 +52,10 @@ class EditorSettings
     
     BOOL          IsInsertMode         (VOID)          {return bInsertMode;};
     VOID          SetInsertMode        (BOOL bIn)      {bInsertMode = bIn;};
+    
+    BOOL          IsWrapSearchMode     (VOID)          {return bWrapSearchMode;};
+    VOID          SetWrapSearchMode    (BOOL bIn)      {bWrapSearchMode = bIn;};
+    
     
   };
 
