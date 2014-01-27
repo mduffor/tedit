@@ -209,6 +209,7 @@ class GapBuffer
     VOID          FindAll               (const char *  szRegExIn);
     VOID          CursorToFindNext      (BOOL  bWrapSearch);
     VOID          CursorToFindPrev      (BOOL  bWrapSearch);
+    const char *  GetSearchTerm         (VOID)                      {return (strSearchTerm);};
     
 };
 

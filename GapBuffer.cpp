@@ -101,6 +101,8 @@ GapBuffer::GapBuffer ()
     locCursor.Set (1,0);
     locSelect = locInvalid;
     locWindow.Set (1,0);
+    iLinesPerPage = 1;
+    iColPerPage = 80;
     
     CalcLineOffsets ();
     bModified = FALSE;
@@ -340,7 +342,7 @@ Location  GapBuffer::OffsetToLocation (INT  iOffsetIn)
     {
     if (iOffsetIn < aiLineOffsets[iIndex])
       {
-      return (Location (iIndex - 1, iOffsetIn - aiLineOffsets [iIndex - 1]));
+      return (Location (iIndex, iOffsetIn - aiLineOffsets [iIndex - 1]));
       }
     }
   // offset is beyond the valid end of the buffer
@@ -693,6 +695,7 @@ VOID  GapBuffer::DeleteChars   (INT iCountIn)
     iCountIn = TMin (iCountIn, iGapStart);
     iGapStart -= iCountIn;
     iGapSize += iCountIn;
+    locCursor.iCol -= iCountIn;
     iDeleteStart = iGapStart;
     }
   else if (iCountIn > 0)
@@ -717,6 +720,12 @@ VOID  GapBuffer::DeleteChars   (INT iCountIn)
       break;  
       };
     };
+  // wrap cursor.  endline char has just been deleted.
+  if (locCursor.iCol < 0)
+    {
+    locCursor = OffsetToLocation (iGapStart);
+    }
+    
   SetIsModified (TRUE);
   };
   
@@ -977,7 +986,7 @@ VOID  GapBuffer::FindAll (const char *  szRegExIn)
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::CursorToFindNext (BOOL  bWrapSearch)
   {
-  INT  iCurrentOffset = LocationToOffset (locCursor);
+  INT  iCurrentOffset = LocationToOffset (locCursor) + 1;
   INT  iNumMatches = aiSearchOffsets.Length();
   if (iNumMatches == 0) return;
   for (INT  iIndex = 0; iIndex < iNumMatches; ++iIndex)
@@ -985,21 +994,21 @@ VOID  GapBuffer::CursorToFindNext (BOOL  bWrapSearch)
     if (iCurrentOffset <= aiSearchOffsets[iIndex]) 
       {
       locCursor = OffsetToLocation (aiSearchOffsets[iIndex]);
-      locSelect = OffsetToLocation (aiSearchOffsets[iIndex] + aiSearchSizes[iIndex]);
+      locSelect = OffsetToLocation (aiSearchOffsets[iIndex] + aiSearchSizes[iIndex] - 1);
       return;
       }
     }
   if (bWrapSearch)
     {
     locCursor = OffsetToLocation (aiSearchOffsets[0]);
-    locSelect = OffsetToLocation (aiSearchOffsets[0] + aiSearchSizes[0]);
+    locSelect = OffsetToLocation (aiSearchOffsets[0] + aiSearchSizes[0] - 1);
     }
   }
   
 //-----------------------------------------------------------------------------
 VOID  GapBuffer::CursorToFindPrev (BOOL  bWrapSearch)
   {
-  INT  iCurrentOffset = LocationToOffset (locCursor);
+  INT  iCurrentOffset = LocationToOffset (locCursor) - 1;
   INT  iNumMatches = aiSearchOffsets.Length();
   if (iNumMatches == 0) return;
   for (INT  iIndex = 0; iIndex < iNumMatches; ++iIndex)
@@ -1009,7 +1018,7 @@ VOID  GapBuffer::CursorToFindPrev (BOOL  bWrapSearch)
       if (iIndex > 0)
         {
         locCursor = OffsetToLocation (aiSearchOffsets[iIndex - 1]);
-        locSelect = OffsetToLocation (aiSearchOffsets[iIndex - 1] + aiSearchSizes[iIndex - 1]);
+        locSelect = OffsetToLocation (aiSearchOffsets[iIndex - 1] + aiSearchSizes[iIndex - 1] - 1);
         return;
         }
       break;
@@ -1018,7 +1027,7 @@ VOID  GapBuffer::CursorToFindPrev (BOOL  bWrapSearch)
   if (bWrapSearch)
     {
     locCursor = OffsetToLocation (aiSearchOffsets[iNumMatches - 1]);
-    locSelect = OffsetToLocation (aiSearchOffsets[iNumMatches - 1] + aiSearchSizes[iNumMatches - 1]);
+    locSelect = OffsetToLocation (aiSearchOffsets[iNumMatches - 1] + aiSearchSizes[iNumMatches - 1] - 1);
     }
   }
   

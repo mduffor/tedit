@@ -100,5 +100,7 @@ VOID CmdGotoLine (RStrArray *  arrayParams);
 VOID CmdFindTextPrompt (RStrArray *  arrayParams);
 VOID CmdFindText (RStrArray *  arrayParams);
 
+VOID CmdFindTextNext (RStrArray *  arrayParams);
+VOID CmdFindTextPrev (RStrArray *  arrayParams);
 
 #endif // BUFFERCOMMANDS_HPP

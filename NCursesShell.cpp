@@ -197,6 +197,9 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
       case (CTRL_A):                    cmdManager.ExecuteCommand ("SelectAll", NULL);  break;
       case (CTRL_G):                    cmdManager.ExecuteCommand ("GotoLinePrompt", NULL);  break;
       case (CTRL_F):                    cmdManager.ExecuteCommand ("FindTextPrompt", NULL);  break;
+      case (VKFLG_ALT | VKEY_UP):       cmdManager.ExecuteCommand ("FindTextPrev", NULL);  break;
+      case (VKFLG_ALT | VKEY_DOWN):     cmdManager.ExecuteCommand ("FindTextNext", NULL);  break;
+      
       
       
       case (CTRL_Q):
@@ -442,6 +445,9 @@ VOID  NCursesShell::DrawBufferEntryField (INT               iScreenX,
   INT  iScreenCol = 0;
   const INT LINE_BUFFER_LENGTH = 512;
   static char szLine [LINE_BUFFER_LENGTH];
+
+  buffer.SetLinesPerPage (1);
+  buffer.SetColPerPage (iWidth);
   
   Location locHighlightStart = buffer.GetSelectionStart ();
   Location locHighlightEnd   = buffer.GetSelectionEnd ();
@@ -551,6 +557,11 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
     case KEY_SRIGHT:    return (VKFLG_SHIFT | VKEY_RIGHT);
     case KEY_SR:        return (VKFLG_SHIFT | VKEY_UP);
     case KEY_SF:        return (VKFLG_SHIFT | VKEY_DOWN);
+    
+    case 0x233:         return (VKFLG_ALT | VKEY_UP);
+    case 0x20a:         return (VKFLG_ALT | VKEY_DOWN);
+    case 0x22d:         return (VKFLG_ALT | VKEY_RIGHT);
+    case 0x21e:         return (VKFLG_ALT | VKEY_LEFT);
     
     default:
       {

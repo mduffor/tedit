@@ -103,6 +103,9 @@ VOID InitBufferCommands (GapBufferManager *   pBufferManagerIn,
   cmdManagerIn.AddCommand ("GotoLine", CmdGotoLine);
   cmdManagerIn.AddCommand ("FindTextPrompt", CmdFindTextPrompt);
   cmdManagerIn.AddCommand ("FindText", CmdFindText);
+  
+  cmdManagerIn.AddCommand ("FindTextNext", CmdFindTextNext);
+  cmdManagerIn.AddCommand ("FindTextPrev", CmdFindTextPrev);
   };
 
 //-----------------------------------------------------------------------------
@@ -689,14 +692,12 @@ VOID CmdSelectAll (RStrArray *  arrayParams)
 VOID CmdScrollWindowUp (RStrArray *  arrayParams)
   {
   ScrollWindowUp ();
-  // TODO: Undo
   };
   
 //-----------------------------------------------------------------------------
 VOID CmdScrollWindowDown (RStrArray *  arrayParams)
   {
   ScrollWindowDown ();
-  // TODO: Undo
   };
   
 //-----------------------------------------------------------------------------
@@ -704,7 +705,6 @@ VOID CmdCursorPageUp (RStrArray *  arrayParams)
   {
   ScrollWindowPageDown ();
   CursorPageUp ();
-  // TODO: Undo
   };
   
 //-----------------------------------------------------------------------------
@@ -712,7 +712,6 @@ VOID CmdCursorPageDown (RStrArray *  arrayParams)
   {
   ScrollWindowPageUp ();
   CursorPageDown ();
-  // TODO: Undo
   };  
   
 //-----------------------------------------------------------------------------
@@ -723,8 +722,6 @@ VOID CmdGotoLinePrompt (RStrArray *  arrayParams)
   astrInputFields.SetLength (1);
   astrInputFields[0].Set ("Line");
   pEntryFieldHandler->StartInput ("GotoLine", astrInputFields);  
-  
-  // TODO: Undo
   };  
     
 //-----------------------------------------------------------------------------
@@ -741,8 +738,6 @@ VOID CmdGotoLine (RStrArray *  arrayParams)
   pDisplayBuffer->ClampLocationToValidChar (locCursor);
   pDisplayBuffer->SetCursor (locCursor);
   pDisplayBuffer->MoveWindowToCursor ();
-  
-  // TODO: Undo
   };  
   
 //-----------------------------------------------------------------------------
@@ -753,8 +748,6 @@ VOID CmdFindTextPrompt (RStrArray *  arrayParams)
   astrInputFields.SetLength (1);
   astrInputFields[0].Set ("Find");
   pEntryFieldHandler->StartInput ("FindText", astrInputFields);  
-  
-  // TODO: Undo
   };  
     
 //-----------------------------------------------------------------------------
@@ -766,6 +759,33 @@ VOID CmdFindText (RStrArray *  arrayParams)
   pDisplayBuffer->FindAll ((*arrayParams)[0].AsChar());
   pDisplayBuffer->CursorToFindNext (pSettings->IsWrapSearchMode ());
   pDisplayBuffer->MoveWindowToCursor ();
-  // TODO: Undo
   };  
+
+//-----------------------------------------------------------------------------
+VOID CmdFindTextNext (RStrArray *  arrayParams)
+  {
+  pDisplayBuffer->FindAll (pDisplayBuffer->GetSearchTerm ());
+  pDisplayBuffer->CursorToFindNext (pSettings->IsWrapSearchMode ());
+  pDisplayBuffer->MoveWindowToCursor ();
+  };  
+  
+//-----------------------------------------------------------------------------
+VOID CmdFindTextPrev (RStrArray *  arrayParams)
+  {
+  pDisplayBuffer->FindAll (pDisplayBuffer->GetSearchTerm ());
+  pDisplayBuffer->CursorToFindPrev (pSettings->IsWrapSearchMode ());
+  pDisplayBuffer->MoveWindowToCursor ();
+  };  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
