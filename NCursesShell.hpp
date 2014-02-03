@@ -22,6 +22,8 @@
 #define NCURSESSHELL_HPP
 
 #include "Types.hpp"
+#include "RStrArray.hpp"
+#include "IntArray.hpp"
 #include "GapBuffer.hpp"
 #include "Command.hpp"
 #include "EditorSettings.hpp"
@@ -34,43 +36,70 @@ class NCursesShell
   
     BOOL         bShowLineNumbers;
     BOOL         bShowStatusBar;
+    BOOL         bShowFileList;
+    INT          iFileListWidth;
+    
+    RStrArray    astrFileList;
+    IntArray     aiFileLoaded;
+    INT          iFileListTopLine;
+    INT          iFileListCursor;
+    INT          iFileListHeight;
+    
     
   public:
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update               (GapBuffer *          pBuffer,
-                               CommandManager &     cmdManager,
-                               EditorSettings &     editorSettings,
-                               EntryFieldHandler &  entryFieldHandler);
+    VOID Update                (GapBuffer *          pBuffer,
+                                CommandManager &     cmdManager,
+                                EditorSettings &     editorSettings,
+                                EntryFieldHandler &  entryFieldHandler);
 
-    INT  NumDigits            (INT  iValueIn);
+    VOID DisplayFileList       (INT                  iScreenX, 
+                                INT                  iScreenY,
+                                INT                  iWidth,
+                                INT                  iHeight);
 
-    VOID DisplayWindow        (INT                  iScreenX, 
-                               INT                  iScreenY,
-                               INT                  iWidth,
-                               INT                  iHeight, 
-                               GapBuffer *          pBuffer,
-                               EditorSettings &     editorSettings,
-                               EntryFieldHandler &  entryFieldHandler);
+    VOID KeepFileListCursorOnScreen (VOID);
+                               
+    VOID FileListCursorUp      (VOID);
+
+    VOID FileListCursorDown    (VOID);
+    
+    VOID ToggleFileListDisplay (VOID);
+    
+    BOOL ProcessInputFileList (CommandManager &     cmdManager,
+                               EditorSettings &     editorSettings);
+                               
+                               
+                               
+    INT  NumDigits             (INT  iValueIn);
+
+    VOID DisplayWindow         (INT                  iScreenX, 
+                                INT                  iScreenY,
+                                INT                  iWidth,
+                                INT                  iHeight, 
+                                GapBuffer *          pBuffer,
+                                EditorSettings &     editorSettings,
+                                EntryFieldHandler &  entryFieldHandler);
  
-    BOOL ProcessInput         (GapBuffer *          pInputBuffer,
-                               GapBuffer *          pDisplayBuffer,
-                               CommandManager &     cmdManager,
-                               EditorSettings &     editorSettings,
-                               EntryFieldHandler &  entryFieldHandler);
+    BOOL ProcessInput          (GapBuffer *          pInputBuffer,
+                                GapBuffer *          pDisplayBuffer,
+                                CommandManager &     cmdManager,
+                                EditorSettings &     editorSettings,
+                                EntryFieldHandler &  entryFieldHandler);
                              
-    VOID DrawBufferEntryField (INT               iScreenX, 
-                               INT               iScreenY,
-                               INT               iWidth,
-                               GapBuffer &       buffer,
-                               EditorSettings &  editorSettings);
+    VOID DrawBufferEntryField  (INT               iScreenX, 
+                                INT               iScreenY,
+                                INT               iWidth,
+                                GapBuffer &       buffer,
+                                EditorSettings &  editorSettings);
                                           
-    BOOL GetHighlightState    (Location &  locCurr,
-                               Location &  locBegin,
-                               Location &  locEnd);
+    BOOL GetHighlightState     (Location &  locCurr,
+                                Location &  locBegin,
+                                Location &  locEnd);
 
-    INT  NCursesToVKey        (INT  nCursesKey);
+    INT  NCursesToVKey         (INT  nCursesKey);
 
     
   };  

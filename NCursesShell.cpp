@@ -37,6 +37,34 @@ NCursesShell::NCursesShell ()
   {
   bShowLineNumbers = TRUE;
   bShowStatusBar = TRUE;
+  bShowFileList = TRUE;
+  iFileListWidth = 20;
+  
+  // file list init.  Move to own class
+  iFileListTopLine = 0;
+  iFileListCursor = 1;
+  
+  astrFileList.Append ("./SyntaxTest.txt");       aiFileLoaded.Append (1);
+  astrFileList.Append ("./test/");                aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld.txt");  aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld2.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld3.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld4.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld5.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld6.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld7.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld8.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld9.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld10.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld11.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld12.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld13.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld14.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld15.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld16.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld17.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld18.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld19.txt"); aiFileLoaded.Append (0);
   
   initscr ();  // start ncurses
   raw ();      // disable line buffering
@@ -99,25 +127,168 @@ VOID NCursesShell::Update (GapBuffer *          pBuffer,
   BOOL  bExit = FALSE;
   while (!bExit) 
     {
+    INT  iHeader = 5;
+    INT  iLeft = 0;
+
+    if (bShowFileList)
+      {
+      iLeft = iFileListWidth;
+      };
+    
+    INT  iStartX = 0;
+    INT  iStartY = 0;
+    INT  iWidth = iColMax;
+    INT  iHeight = iRowMax;
+    
     GapBuffer *  pBufferInputFocus = pBuffer;
     
     if (entryFieldHandler.IsActive ())
       {
       pBufferInputFocus = &(entryFieldHandler.GetBuffer ());
       }
-    
-    DisplayWindow (0, 5,
-                  iColMax, 20, // iColMax, iRowMax, 
+
+    DisplayWindow (iStartX + iLeft, iStartY + iHeader,
+                  iWidth - iLeft, iHeight - iHeader, // iColMax, iRowMax, 
                   pBuffer,
                   editorSettings,
                   entryFieldHandler);
     //refresh();
-
-    bExit = ProcessInput (pBufferInputFocus, pBuffer, cmdManager, editorSettings, entryFieldHandler);
+    if (bShowFileList)
+      {
+      DisplayFileList (iStartX, iStartY + iHeader, iLeft, iHeight - iHeader);
+      bExit = ProcessInputFileList (cmdManager, editorSettings);
+      }
+    else 
+      {
+      bExit = ProcessInput (pBufferInputFocus, pBuffer, cmdManager, editorSettings, entryFieldHandler);
+      }
     refresh();
     }
   };
 
+//-----------------------------------------------------------------------------
+VOID NCursesShell::DisplayFileList (INT                  iScreenX, 
+                                    INT                  iScreenY,
+                                    INT                  iWidth,
+                                    INT                  iHeight)
+  {
+  // This will eventually go into its own class
+  
+  iFileListHeight = iHeight;
+  
+  INT  iMaxLines = astrFileList.Length ();
+  INT  iLine     = iFileListTopLine;
+  INT  iRemaining = 0;
+  INT  iIndex;
+  for (iIndex = 0; iIndex < iHeight; ++iIndex)
+    {
+    if (iLine >= iMaxLines) break;
+    
+    //attron(A_BOLD);
+    move (iScreenY + iIndex, iScreenX);
+    INT  iStringLength = astrFileList[iLine].GetLength ();
+    if (aiFileLoaded [iLine])
+      {
+      attrset(COLOR_PAIR (COLOR_GREEN));
+      };
+    if (iFileListCursor == iLine)
+      {
+      attron (A_REVERSE);
+      };
+    
+    addnstr (astrFileList[iLine].AsChar (), TMin (iWidth, iStringLength));
+    iRemaining = iWidth - iStringLength;
+    while (iRemaining > 0)
+      {
+      addch (' ');
+      --iRemaining;
+      };
+    ++iLine;
+    attrset(A_NORMAL);
+    }
+    
+  for (; iIndex < iHeight; ++iIndex)
+    {
+    move (iScreenY + iIndex, iScreenX);
+    iRemaining = iWidth;
+    while (iRemaining > 0)
+      {
+      addch (' ');
+      --iRemaining;
+      };
+    }
+  }
+
+//-----------------------------------------------------------------------------
+VOID NCursesShell::KeepFileListCursorOnScreen (VOID)
+  {
+  if (iFileListCursor < iFileListTopLine)
+    {
+    iFileListTopLine = iFileListCursor;
+    }
+  if (iFileListCursor >= iFileListTopLine + iFileListHeight)
+    {
+    iFileListTopLine = TMax (0, iFileListCursor - iFileListHeight + 1); 
+    }
+  }
+
+//-----------------------------------------------------------------------------
+VOID NCursesShell::FileListCursorUp (VOID)
+  {
+  // TODO: Handle collapsed sections
+  iFileListCursor = TMax (0, TMin (astrFileList.Length () - 1, iFileListCursor - 1));
+  KeepFileListCursorOnScreen ();
+  }
+  
+//-----------------------------------------------------------------------------
+VOID NCursesShell::FileListCursorDown (VOID)
+  {
+  // TODO: Handle collapsed sections
+  iFileListCursor = TMax (0, TMin (astrFileList.Length () - 1, iFileListCursor + 1));
+  KeepFileListCursorOnScreen ();
+  }
+
+//-----------------------------------------------------------------------------
+VOID NCursesShell::ToggleFileListDisplay (VOID)
+  {
+  bShowFileList = bShowFileList ? FALSE : TRUE;
+  }
+  
+//-----------------------------------------------------------------------------
+BOOL NCursesShell::ProcessInputFileList (CommandManager &     cmdManager,
+                                         EditorSettings &     editorSettings)
+  {
+  INT vKey = NCursesToVKey(getch());
+  
+  if (vKey >= 32 && vKey <= 126) 
+    {
+    // standard printable ASCII key
+    // TODO: seek out files in directory that match typed letters
+    }
+  else
+    {
+    // Note: This needs to be converted to a configureable hotkey lookup.
+    switch (vKey)
+      {
+      case VKEY_DOWN:      FileListCursorDown ();  break;
+      case VKEY_UP:        FileListCursorUp ();  break;
+      case VKEY_PAGEDOWN:  break;
+      case VKEY_PAGEUP:    break;
+      case VKEY_LEFT:      break;
+      case VKEY_RIGHT:     break;
+      case VKEY_HOME:      break;
+      case VKEY_END:       break;
+      case VKEY_ENTER:     
+        break;
+        
+      case (CTRL_P):       ToggleFileListDisplay (); break;
+      case (CTRL_Q):
+        return (TRUE);
+      };
+    };
+  return (FALSE);
+  };
+  
 //-----------------------------------------------------------------------------
 BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
                                  GapBuffer *          pDisplayBuffer,
@@ -199,6 +370,7 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
       case (CTRL_F):                    cmdManager.ExecuteCommand ("FindTextPrompt", NULL);  break;
       case (VKFLG_ALT | VKEY_UP):       cmdManager.ExecuteCommand ("FindTextPrev", NULL);  break;
       case (VKFLG_ALT | VKEY_DOWN):     cmdManager.ExecuteCommand ("FindTextNext", NULL);  break;
+      case (CTRL_P):                    ToggleFileListDisplay (); break;
       
       
       
@@ -222,7 +394,6 @@ INT  NCursesShell::NumDigits (INT  iValueIn)
   return (iNumDigits);
   }
 
-  
 //-----------------------------------------------------------------------------
 VOID NCursesShell::DisplayWindow (INT                  iScreenX, 
                                   INT                  iScreenY,
