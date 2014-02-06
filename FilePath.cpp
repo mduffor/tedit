@@ -78,27 +78,27 @@ FilePath::~FilePath ()
 
 
 //------------------------------------------------------------------------
-RStrArray  FilePath::lsf  (RStr       strFullPathSpec,
-                            BOOL       bFullPaths,
-                            EStatus *  pStatusOut)
+RStrArray  FilePath::lsf  (const char *  pszFullPathSpec,
+                            BOOL         bFullPaths,
+                            EStatus *    pStatusOut)
   {
-  return (ls  (strFullPathSpec, true, false, bFullPaths, pStatusOut));
+  return (ls  (pszFullPathSpec, true, false, bFullPaths, pStatusOut));
   };
 
     
 //------------------------------------------------------------------------
-RStrArray  FilePath::lsd  (RStr       strFullPathSpec,
-                            BOOL       bFullPaths,
-                            EStatus *  pStatusOut)
+RStrArray  FilePath::lsd  (const char *  pszFullPathSpec,
+                           BOOL          bFullPaths,
+                           EStatus *     pStatusOut)
   {
-  return (ls  (strFullPathSpec, false, true, bFullPaths, pStatusOut));
+  return (ls  (pszFullPathSpec, false, true, bFullPaths, pStatusOut));
   };
 
 
 //------------------------------------------------------------------------
 const RStr  FilePath::operator =  (const RStr & strIn)
   {
-  cd (strIn);
+  cd (strIn.AsChar());
   return strCurrPath;
   };
 
@@ -106,26 +106,26 @@ const RStr  FilePath::operator =  (const RStr & strIn)
 //------------------------------------------------------------------------
 const RStr  FilePath::operator =  (const char *  pszIn)
   {
-  cd (RStr (pszIn));
+  cd (pszIn);
   return strCurrPath;
   };
 
 //------------------------------------------------------------------------------
-UINT32 FilePath::SplitPath (RStr         strPathIn,
+UINT32 FilePath::SplitPath (const char *  pszPathIn,
                              UINT32       uSeparatorIn,
                              RStrArray &  arrayOut)
   {
   INT32      iCopyStart;
   UINT32     uNumStringsFound = 0;
 
-  INT  iLength = strPathIn.GetLength ();
+  INT  iLength = strlen (pszPathIn);
   INT  iCurrPos = 0;
   
   while (iCurrPos < iLength)
     {
     // search for the separator
     iCopyStart = iCurrPos;
-    while (uSeparatorIn != strPathIn.GetAt (iCurrPos))
+    while (uSeparatorIn != (unsigned char) pszPathIn [iCurrPos])
       {
       ++iCurrPos;
       if (iCurrPos >= iLength) break;
@@ -140,6 +140,7 @@ UINT32 FilePath::SplitPath (RStr         strPathIn,
 
       if (iStringLength > 0)
         {
+        RStr strPathIn (pszPathIn);
         strPathIn.GetMiddle (iCopyStart, iStringLength, strOut);
         };
       ++uNumStringsFound;
@@ -160,11 +161,11 @@ UINT32 FilePath::SplitPath (RStr         strPathIn,
 
 #ifdef ANDROID_NDK  
 //------------------------------------------------------------------------
-RStrArray  FilePath::ls  (RStr       strFullPathSpec,
-                           BOOL       bShowFiles,
-                           BOOL       bShowDirs,
-                           BOOL       bFullPaths,
-                           EStatus *  pStatusOut)
+RStrArray  FilePath::ls  (const char *  pszFullPathSpec,
+                          BOOL          bShowFiles,
+                          BOOL          bShowDirs,
+                          BOOL          bFullPaths,
+                          EStatus *     pStatusOut)
   {
   struct dirent *  pDirEntry;
   BOOL             bDone = false;
@@ -175,7 +176,7 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
 
   // use the given path, or the current path, or the current directory
   
-  RStr  strPathOut = strFullPathSpec;
+  RStr  strPathOut = pszFullPathSpec;
   if (strPathOut.IsEmpty ())
     {
     strPathOut = strCurrPath;
@@ -289,11 +290,11 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
 
 #else
 //------------------------------------------------------------------------
-RStrArray  FilePath::ls  (RStr       strFullPathSpec,
-                           BOOL       bShowFiles,
-                           BOOL       bShowDirs,
-                           BOOL       bFullPaths,
-                           EStatus *  pStatusOut)
+RStrArray  FilePath::ls  (const char *  pszFullPathSpec,
+                          BOOL          bShowFiles,
+                          BOOL          bShowDirs,
+                          BOOL          bFullPaths,
+                          EStatus *     pStatusOut)
   {
   DIR *            dirHandle;
   struct dirent *  pDirEntry;
@@ -305,7 +306,7 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
 
   // use the given path, or the current path, or the current directory
   
-  RStr  strPathOut = strFullPathSpec;
+  RStr  strPathOut = pszFullPathSpec;
   if (strPathOut.IsEmpty ())
     {
     strPathOut = strCurrPath;
@@ -399,22 +400,22 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
 #endif //ANDROID_NDK
 
 //------------------------------------------------------------------------
-EStatus  FilePath::cd  (const RStr &  strDirIn,
-                         BOOL          bChangeShellDir)
+EStatus  FilePath::cd  (const char *  pszDirIn,
+                        BOOL          bChangeShellDir)
   {
   DIR *            dirHandle;
-  
   RStr             strNewPath;
   
-  if (strDirIn [0] == UINT32 ('/'))
+  if (pszDirIn == NULL) {return (EStatus::kFailure);};
+  if ((unsigned char) pszDirIn [0] == UINT32 ('/'))
     {
     // absolute directory
-    strNewPath = strDirIn;
+    strNewPath = pszDirIn;
     }
   else
     {
     // relative path
-    strNewPath = strCurrPath + strDirIn;
+    strNewPath = strCurrPath + pszDirIn;
     };
   
   // make sure the path ends in a slash
@@ -448,14 +449,14 @@ EStatus  FilePath::cd  (const RStr &  strDirIn,
 
 
 //------------------------------------------------------------------------------
-bool FilePath::DirExists (RStr  strPathIn)
+bool FilePath::DirExists (const char *  pszPathIn)
   {
   struct stat  statInfo;
  
   // Note: May want to strip out double slashes here.
   // to be implemented
  
-  if (stat (strPathIn.AsChar (), &statInfo) == 0)
+  if (stat (pszPathIn, &statInfo) == 0)
     {
     if (S_ISDIR (statInfo.st_mode))
       {
@@ -468,9 +469,9 @@ bool FilePath::DirExists (RStr  strPathIn)
 
 #ifdef ANDROID_NDK  
 //------------------------------------------------------------------------------
-bool FilePath::FileExists (RStr  strPathIn)
+bool FilePath::FileExists (const char *  pszPathIn)
   {
-  AAsset* asset = AAssetManager_open(filePath_assetManager, (const char *) strPathIn.AsChar (), AASSET_MODE_UNKNOWN);
+  AAsset* asset = AAssetManager_open(filePath_assetManager, pszPathIn, AASSET_MODE_UNKNOWN);
   if (asset == NULL) 
     {
     return (false);
@@ -480,11 +481,11 @@ bool FilePath::FileExists (RStr  strPathIn)
   };
 #else
 //------------------------------------------------------------------------------
-bool FilePath::FileExists (RStr  strPathIn)
+bool FilePath::FileExists (const char *  pszPathIn)
   {
   struct stat  statInfo;
  
-  if (stat (strPathIn.AsChar (), &statInfo) == 0)
+  if (stat (pszPathIn, &statInfo) == 0)
     {
     if (S_ISREG (statInfo.st_mode))
       {
@@ -497,7 +498,7 @@ bool FilePath::FileExists (RStr  strPathIn)
 
 #ifdef ANDROID_NDK  
 //------------------------------------------------------------------------------
-UINT  FilePath::GetFileSize  (RStr  strPathIn)
+UINT  FilePath::GetFileSize  (const char *  pszPathIn)
   {
   UINT     ulFileSize = 0;
   
@@ -505,10 +506,10 @@ UINT  FilePath::GetFileSize  (RStr  strPathIn)
 
   //AAssetManager* mgr = AAssetManager_fromJava (filePath_jniEnv, filePath_jobjAssetManager);
  
-  AAsset* asset = AAssetManager_open(filePath_assetManager, (const char *) strPathIn.AsChar (), AASSET_MODE_UNKNOWN);
+  AAsset* asset = AAssetManager_open(filePath_assetManager, pszPathIn, AASSET_MODE_UNKNOWN);
   if (asset == NULL) 
     {
-    DBG_ERROR ("_ASSET_NOT_FOUND_ : %s", strPathIn.AsChar ());
+    DBG_ERROR ("_ASSET_NOT_FOUND_ : %s", pszPathIn);
     return (0);
     }
     
@@ -518,12 +519,12 @@ UINT  FilePath::GetFileSize  (RStr  strPathIn)
   };
 #else // ANDROID_NDK
 //------------------------------------------------------------------------------
-UINT  FilePath::GetFileSize  (RStr  strPathIn)
+UINT  FilePath::GetFileSize  (const char *  pszPathIn)
   {
   FILE *   fp;
   UINT     ulFileSize = 0;
   
-  if ((fp = fopen (strPathIn.AsChar (), "rb")) != NULL)
+  if ((fp = fopen (pszPathIn, "rb")) != NULL)
     {
     fseek (fp, 0, SEEK_END);
     ulFileSize = ftell (fp);
@@ -535,18 +536,18 @@ UINT  FilePath::GetFileSize  (RStr  strPathIn)
   
   
 //------------------------------------------------------------------------------
-VOID FilePath::MakeDir (RStr  strPathIn)
+VOID FilePath::MakeDir (const char *  pszPathIn)
   {
-  if (! DirExists (strPathIn))
+  if (! DirExists (pszPathIn))
     {
     RStrArray   arrayPath;
     RStr        strCurrPath;
 
-    INT  iNumDirs = SplitPath (strPathIn, '/', arrayPath);
+    INT  iNumDirs = SplitPath (pszPathIn, '/', arrayPath);
    
     for (INT  iDirIndex = 0; iDirIndex < iNumDirs; ++iDirIndex)
       {
-      if ((iDirIndex == 0) && (strPathIn.GetAt (0) != '/'))
+      if ((iDirIndex == 0) && (pszPathIn[0] != '/'))
         {
         // path is relative, so don't start it with a slash.
         strCurrPath += arrayPath [iDirIndex];
@@ -570,9 +571,9 @@ VOID FilePath::MakeDir (RStr  strPathIn)
 
 
 //------------------------------------------------------------------------------
-RStr  FilePath::GetCwd  (VOID)
+const char *  FilePath::GetCwd  (VOID)
   {
-  CHAR   szBuffer [512];
+  static CHAR   szBuffer [512];
   
   memset (szBuffer, 0, 512);
   if (getcwd (szBuffer, 511) == NULL)
@@ -580,7 +581,7 @@ RStr  FilePath::GetCwd  (VOID)
     return (RStr::kEmpty);
     };
 
-  return (RStr (szBuffer));
+  return (szBuffer);
   };
 
 
@@ -608,11 +609,11 @@ RStr  FilePath::GetCwd  (VOID)
 #ifdef WIN32
 
 //------------------------------------------------------------------------
-RStrArray  FilePath::ls  (RStr       strFullPathSpec,
-                           BOOL       bShowFiles,
-                           BOOL       bShowDirs,
-                           BOOL       bFullPaths,
-                           EStatus *  pStatusOut)
+RStrArray  FilePath::ls  (const char *  pszFullPathSpec,
+                          BOOL          bShowFiles,
+                          BOOL          bShowDirs,
+                          BOOL          bFullPaths,
+                          EStatus *     pStatusOut)
   {
   BOOL             bDone = false;
   RStrArray        arrayOut;
@@ -627,7 +628,7 @@ RStrArray  FilePath::ls  (RStr       strFullPathSpec,
 
   // use the given path, or the current path, or the current directory
   
-  RStr  strPathOut = strFullPathSpec;
+  RStr  strPathOut = pszFullPathSpec;
   if (strPathOut.IsEmpty ())
     {
     strPathOut = strCurrPath;
@@ -809,12 +810,12 @@ EStatus  FilePath::cd  (const RStr &  strDirIn,
 
 
 //------------------------------------------------------------------------------
-bool FilePath::DirExists (RStr  strPathIn)
+bool FilePath::DirExists (const char *  pszPathIn)
   {
   // Note: May want to strip out double slashes here.
   // to be implemented
 
-  if (GetFileAttributes (strPathIn.AsChar ()) & FILE_ATTRIBUTE_DIRECTORY)
+  if (GetFileAttributes (pszPathIn) & FILE_ATTRIBUTE_DIRECTORY)
     {
     return (true);
     };
@@ -823,7 +824,7 @@ bool FilePath::DirExists (RStr  strPathIn)
 
 
 //------------------------------------------------------------------------------
-bool FilePath::FileExists (RStr  strPathIn) const
+bool FilePath::FileExists (const char *  pszPathIn) const
   {
   // Note:  Ideally we should be using GetFileAttributes to check and see if this
   //   is a file or not, but apparently Windows is broken and can't find the file
@@ -831,13 +832,13 @@ bool FilePath::FileExists (RStr  strPathIn) const
   
   
   FILE *  fp;
-  if ((fp = fopen (strPathIn.AsChar (), "rb")) == NULL)
+  if ((fp = fopen (pszPathIn, "rb")) == NULL)
     {
     return (false);
     };
   return (true);
 
-  //if (GetFileAttributes (strPathIn.AsChar ()) & FILE_ATTRIBUTE_NORMAL)
+  //if (GetFileAttributes (pszPathIn) & FILE_ATTRIBUTE_NORMAL)
   //  {
   //  return (true);
   //  };
@@ -847,18 +848,18 @@ bool FilePath::FileExists (RStr  strPathIn) const
 
 
 //------------------------------------------------------------------------------
-VOID FilePath::MakeDir (RStr  strPathIn)
+VOID FilePath::MakeDir (const char *  pszPathIn)
   {
-  if (! DirExists (strPathIn))
+  if (! DirExists (pszPathIn))
     {
     RStrArray   arrayPath;
     RStr        strCurrPath;
 
-    INT  iNumDirs = SplitPath (strPathIn, '/', arrayPath);
+    INT  iNumDirs = SplitPath (pszPathIn, '/', arrayPath);
    
     for (INT  iDirIndex = 0; iDirIndex < iNumDirs; ++iDirIndex)
       {
-      if ((iDirIndex == 0) && (strPathIn.GetAt (0) != '/'))
+      if ((iDirIndex == 0) && (pszPathIn[0] != '/'))
         {
         // path is relative, so don't start it with a slash.
         strCurrPath += arrayPath [iDirIndex];
@@ -895,10 +896,10 @@ RStr  FilePath::GetCwd  (VOID)
 
 
 //------------------------------------------------------------------------------
-VOID  FilePath::DirTreeSearch  (RStr         strStartingPath,
-                                 RegEx       rexSearchOne,
-                                 RegEx       rexSearchTwo,
-                                 RStrArray &  arrayAllPathsOut)
+VOID  FilePath::DirTreeSearch  (const char *  pszStartingPath,
+                                RegEx         rexSearchOne,
+                                RegEx         rexSearchTwo,
+                                RStrArray &   arrayAllPathsOut)
   {
   // recursively search the directory tree, starting at the directory passed as 
   //  the starting path.  If you find a directory containing both rexSearchOne
@@ -915,9 +916,9 @@ VOID  FilePath::DirTreeSearch  (RStr         strStartingPath,
   INT        iFoundCount = 0;
   
 
-  //printf ("Start path %s\n", strStartingPath.AsChar ());  
+  //printf ("Start path %s\n", pszStartingPath);  
   // initialize search parameters
-  arrayToSearch.Append (strStartingPath);
+  arrayToSearch.Append (pszStartingPath);
   
   while (arrayToSearch.Length () > iSearchPos)
     {
@@ -957,7 +958,7 @@ VOID  FilePath::DirTreeSearch  (RStr         strStartingPath,
   
   if (iFoundCount == 0)
     {
-    RStr  strCurrPath = strStartingPath;
+    RStr  strCurrPath = pszStartingPath;
     
     do 
       {
@@ -980,9 +981,9 @@ VOID  FilePath::DirTreeSearch  (RStr         strStartingPath,
 
 
 //------------------------------------------------------------------------------
-BOOL  FilePath::DirTreeMatch  (RStr         strPathIn,
-                                RegEx       rexSearchOne,
-                                RegEx       rexSearchTwo)
+BOOL  FilePath::DirTreeMatch  (const char *  pszPathIn,
+                               RegEx         rexSearchOne,
+                               RegEx         rexSearchTwo)
   {
   // this routine is called by DirTreeSearch.  It checks the given path for the existance
   //  of the two search expressions in either files or subdirectories.
@@ -997,8 +998,8 @@ BOOL  FilePath::DirTreeMatch  (RStr         strPathIn,
   BOOL       bMatchTwo = (rexSearchTwo.Pattern () == "") ? true : false;
   
   // get the directory and file listings
-  arrayFiles   = filePath.lsf (strPathIn, true, &statusFiles);
-  arraySubDirs = filePath.lsd (strPathIn, true, &statusDirs);
+  arrayFiles   = filePath.lsf (pszPathIn, true, &statusFiles);
+  arraySubDirs = filePath.lsd (pszPathIn, true, &statusDirs);
 
   // check the files for a match  
   if (statusFiles == EStatus::kSuccess)
@@ -1057,7 +1058,7 @@ BOOL  FilePath::DirTreeMatch  (RStr         strPathIn,
         if ((bMatchOne) && (bMatchTwo))  
           {
           // match
-          //printf ("Found dir %s %s\n", arraySubDirs [iIndex].AsChar (), strPathIn.AsChar ());          
+          //printf ("Found dir %s %s\n", arraySubDirs [iIndex].AsChar (), pszPathIn);
           break;
           };
         };

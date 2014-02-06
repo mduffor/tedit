@@ -79,49 +79,49 @@ class FilePath
 
                                  /** @brief List Directories and Files.
                                  */
-    RStrArray     ls             (RStr       strFullPathSpec = RStr (""),
-                                  BOOL       bShowFiles  = true,
-                                  BOOL       bShowDirs   = true,
-                                  BOOL       bFullPaths  = true,
-                                  EStatus *  statusOut   = NULL);
+    RStrArray     ls            (const char *  pszFullPathSpec = NULL,
+                                 BOOL          bShowFiles  = true,
+                                 BOOL          bShowDirs   = true,
+                                 BOOL          bFullPaths  = true,
+                                 EStatus *     statusOut   = NULL);
 
                                  /** @brief List Files Only.
                                  */
-    RStrArray     lsf            (RStr       strFullPathSpec = RStr (""),
-                                  BOOL       bFullPaths  = true,
-                                  EStatus *  statusOut   = NULL);
+    RStrArray     lsf            (const char *  pszFullPathSpec = NULL,
+                                  BOOL          bFullPaths  = true,
+                                  EStatus *     statusOut   = NULL);
     
                                  /** @brief List Directories Only.
                                  */
-    RStrArray     lsd            (RStr       strFullPathSpec = RStr (""),
-                                  BOOL       bFullPaths  = true, 
-                                  EStatus *  statusOut   = NULL);
+    RStrArray     lsd            (const char *  pszFullPathSpec = NULL,
+                                  BOOL          bFullPaths  = true, 
+                                  EStatus *     statusOut   = NULL);
 
     
                                  /** @brief Change Directory.
                                  */
-    EStatus       cd             (const RStr &  strDirIn,
+    EStatus       cd             (const char *  pszDirIn,
                                   BOOL          bChangeShellDir = FALSE);
 
-    static bool   DirExists      (RStr  strPathIn);
+    static bool   DirExists      (const char *  pszPathIn);
     
-    static bool   FileExists     (RStr  strPathIn);
+    static bool   FileExists     (const char *  pszPathIn);
 
-    static UINT   GetFileSize    (RStr  strPathIn);
+    static UINT   GetFileSize    (const char *  pszPathIn);
     
     
-    static VOID   MakeDir        (RStr  strPathIn);
+    static VOID   MakeDir        (const char *  pszPathIn);
 
-    static RStr   GetCwd         (VOID);
+    static const char *  GetCwd  (VOID);
 
-    static VOID   DirTreeSearch  (RStr         strStartingPath,
-                                  RegEx       rexSearchOne,
-                                  RegEx       rexSearchTwo,
-                                  RStrArray &  arrayAllPathsOut);
+    static VOID   DirTreeSearch  (const char *  pszStartingPath,
+                                  RegEx         rexSearchOne,
+                                  RegEx         rexSearchTwo,
+                                  RStrArray &   arrayAllPathsOut);
 
-    static BOOL   DirTreeMatch   (RStr         strPathIn,
-                                  RegEx       rexSearchOne,
-                                  RegEx       rexSearchTwo);
+    static BOOL   DirTreeMatch   (const char *  pszPathIn,
+                                  RegEx         rexSearchOne,
+                                  RegEx         rexSearchTwo);
 
 
 
@@ -141,16 +141,16 @@ class FilePath
                                  */
     const RStr    operator =     (const char *  pszIn);
 
-    static UINT32  SplitPath     (RStr         strPathIn,
-                                  UINT32       uSeparatorIn,
-                                  RStrArray &  arrayOut);
+    static UINT32  SplitPath     (const char *  pszPathIn,
+                                  UINT32        uSeparatorIn,
+                                  RStrArray &   arrayOut);
     
-    static EStatus  ReadFromFile (const char *     szFilenameIn,
+    static EStatus  ReadFromFile (const char *     pszFilenameIn,
                                   INT              iStartIndexIn,
                                   INT &            iBufferSizeInOut,
                                   unsigned char *  pbyBufferOut);
 
-    static EStatus  WriteToFile  (const char *     szFilenameIn,
+    static EStatus  WriteToFile  (const char *     pszFilenameIn,
                                   BOOL             bAppend,
                                   INT              iBytesToWriteIn,
                                   unsigned char *  pbyBufferIn);
