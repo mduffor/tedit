@@ -33,17 +33,20 @@ class GapBufferManager
     
     
   public:
-                  GapBufferManager ();
-                  ~GapBufferManager ();
-    VOID          FreeAllBuffers (VOID);
-    VOID          SetCurrent (const char *  szNameIn);
-    GapBuffer *   GetCurrent (VOID);
-    GapBuffer *   GetBuffer (const char *  szNameIn);
-    VOID          SetNextToCurrent ();
-    VOID          CreateBuffer (const char *  szNameIn);
-    VOID          ClearBuffer (const char *  szNameIn);
-    VOID          DeleteBuffer (const char *  szNameIn);
-    const char *  GetCurrentBufferName ();
+                  GapBufferManager     ();
+                  ~GapBufferManager    ();
+    VOID          FreeAllBuffers       (VOID);
+    VOID          SetCurrent           (const char *  szNameIn);
+    VOID          SetCurrent           (GapBuffer *  pBufferIn);
+    GapBuffer *   GetCurrent           (VOID);
+    GapBuffer *   GetBuffer            (const char *  szNameIn);
+    GapBuffer *   GetBufferByFileName  (const char *  szFileNameIn);
+    VOID          SetNextToCurrent     (VOID);
+    GapBuffer *   CreateBuffer         (const char *  szNameIn);
+    VOID          ClearBuffer          (const char *  szNameIn);
+    VOID          DeleteBuffer         (const char *  szNameIn);
+    const char *  GetCurrentBufferName (VOID);
+    GapBuffer *   OpenFile             (const char *  pszFileNameIn);
     
 };
 

@@ -43,22 +43,16 @@ int main (int argc, char *argv[])
   CommandManager      cmdManager;  
   EntryFieldHandler   entryFieldHandler;
   
+  InitBufferCommands (pGapManager, cmdManager, pFormat, pSettings, &entryFieldHandler);
   
-  pGapManager->CreateBuffer ("TestBuffer");
-  GapBuffer *  gapBuffer = pGapManager->GetBuffer ("TestBuffer");
+  //GapBuffer *  gapBuffer = pGapManager->OpenFile ("./SyntaxTest.txt");
+  GapBuffer *  gapBuffer = pGapManager->OpenFile ("./test/helloWorld2.txt");
+
   
-  gapBuffer->AllocBuffer (256);
-  gapBuffer->SetFileName ("./SyntaxTest.txt");
-  gapBuffer->Load ();
-  gapBuffer->FillGap ();
   gapBuffer->SetCursor(10, 3);
   
   //gapBuffer->InsertString ("The quick brown fox.\n");
-
-  
-  const char * szRawBuffer = gapBuffer->GetBuffer();
-  InitBufferCommands (pGapManager, cmdManager, pFormat, pSettings, &entryFieldHandler);
-                         
+  //const char * szRawBuffer = gapBuffer->GetBuffer();
   //printf ("%s\n", szRawBuffer);
   //printf ("Line Length 0: %d\n", gapBuffer->GetLineLength(0));
   //printf ("Line Length 1:  %d\n", gapBuffer->GetLineLength(1));
@@ -70,7 +64,7 @@ int main (int argc, char *argv[])
   
   
   NCursesShell *  pShell = new NCursesShell ();
-  pShell->Update (gapBuffer, cmdManager, *pSettings, entryFieldHandler);
+  pShell->Update (pGapManager, cmdManager, *pSettings, entryFieldHandler);
   delete (pShell);
   
   return (0);

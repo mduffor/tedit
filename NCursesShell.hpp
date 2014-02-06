@@ -25,6 +25,7 @@
 #include "RStrArray.hpp"
 #include "IntArray.hpp"
 #include "GapBuffer.hpp"
+#include "GapBufferManager.hpp"
 #include "Command.hpp"
 #include "EditorSettings.hpp"
 #include "EntryFieldHandler.hpp"
@@ -50,7 +51,7 @@ class NCursesShell
     NCursesShell  ();
     ~NCursesShell ();
     
-    VOID Update                (GapBuffer *          pBuffer,
+    VOID Update                (GapBufferManager *   pBufferManager,
                                 CommandManager &     cmdManager,
                                 EditorSettings &     editorSettings,
                                 EntryFieldHandler &  entryFieldHandler);
@@ -68,7 +69,8 @@ class NCursesShell
     
     VOID ToggleFileListDisplay (VOID);
     
-    BOOL ProcessInputFileList (CommandManager &     cmdManager,
+    BOOL ProcessInputFileList (GapBufferManager *   pBufferManager,
+                               CommandManager &     cmdManager,
                                EditorSettings &     editorSettings);
                                
                                

@@ -31,6 +31,7 @@ ASSERTFILE (__FILE__)
 #include "VKeys.hpp"
 #include "BufferCommands.hpp"
 #include "EntryFieldHandler.hpp"
+#include "FilePath.hpp"
 
 //-----------------------------------------------------------------------------
 NCursesShell::NCursesShell ()
@@ -90,20 +91,15 @@ NCursesShell::~NCursesShell ()
   };
 
 //-----------------------------------------------------------------------------
-VOID NCursesShell::Update (GapBuffer *          pBuffer, 
+VOID NCursesShell::Update (GapBufferManager *   pBufferManager,
                            CommandManager &     cmdManager,
                            EditorSettings &     editorSettings,
                            EntryFieldHandler &  entryFieldHandler)
   {
-  if (pBuffer == NULL)
-    {
-    // no buffer.  Error
-    return;
-    };
   int  iRowMax = 0;
   int  iColMax = 0;
-  getmaxyx (stdscr, iRowMax, iColMax);
-    
+
+  
   /*  
   printw ("Testing ncurses (%dx%d).  Press a key to see it in bold. \n", iColMax, iRowMax);
   int ch = getch();
@@ -127,6 +123,14 @@ VOID NCursesShell::Update (GapBuffer *          pBuffer,
   BOOL  bExit = FALSE;
   while (!bExit) 
     {
+    getmaxyx (stdscr, iRowMax, iColMax);
+    GapBuffer *  pBuffer = pBufferManager->GetCurrent();
+    if (pBuffer == NULL)
+      {
+      // no buffer.  Error
+      return;
+      };
+    
     INT  iHeader = 5;
     INT  iLeft = 0;
 
@@ -148,20 +152,24 @@ VOID NCursesShell::Update (GapBuffer *          pBuffer,
       }
 
     DisplayWindow (iStartX + iLeft, iStartY + iHeader,
-                  iWidth - iLeft, iHeight - iHeader, // iColMax, iRowMax, 
-                  pBuffer,
-                  editorSettings,
-                  entryFieldHandler);
+                   iWidth - iLeft, iHeight - iHeader, // iColMax, iRowMax, 
+                   pBuffer,
+                   editorSettings,
+                   entryFieldHandler);
     //refresh();
     if (bShowFileList)
       {
       DisplayFileList (iStartX, iStartY + iHeader, iLeft, iHeight - iHeader);
-      bExit = ProcessInputFileList (cmdManager, editorSettings);
+      bExit = ProcessInputFileList (pBufferManager, cmdManager, editorSettings);
       }
     else 
       {
       bExit = ProcessInput (pBufferInputFocus, pBuffer, cmdManager, editorSettings, entryFieldHandler);
       }
+    move(2,0);
+    printw("file: %s                             ", pBuffer->GetName());
+      
+      
     refresh();
     }
   };
@@ -255,7 +263,8 @@ VOID NCursesShell::ToggleFileListDisplay (VOID)
   }
   
 //-----------------------------------------------------------------------------
-BOOL NCursesShell::ProcessInputFileList (CommandManager &     cmdManager,
+BOOL NCursesShell::ProcessInputFileList (GapBufferManager *   pBufferManager,
+                                         CommandManager &     cmdManager,
                                          EditorSettings &     editorSettings)
   {
   INT vKey = NCursesToVKey(getch());
@@ -278,7 +287,40 @@ BOOL NCursesShell::ProcessInputFileList (CommandManager &     cmdManager,
       case VKEY_RIGHT:     break;
       case VKEY_HOME:      break;
       case VKEY_END:       break;
-      case VKEY_ENTER:     
+      
+      case VKEY_ENTER:
+        {
+        // select if already open
+        GapBuffer *  pExisting = pBufferManager->GetBufferByFileName (astrFileList[iFileListCursor]);
+        if (pExisting != NULL)
+          {
+          // found it
+          pBufferManager->SetCurrent(pExisting);
+          ToggleFileListDisplay ();
+          break;
+          }
+        // not already open.  see if it is a file.
+        FilePath  filePath;
+        if (filePath.FileExists (astrFileList[iFileListCursor]))
+          {
+          // open file
+          
+          RStrArray  arrayFileNameParts;
+          FilePath::SplitPath (astrFileList[iFileListCursor], '/', arrayFileNameParts);
+          
+          GapBuffer *  pBuffer = pBufferManager->CreateBuffer (arrayFileNameParts[arrayFileNameParts.Length() - 1]);
+          pBufferManager->SetCurrent (pBuffer);
+          pBuffer->AllocBuffer (256);
+          pBuffer->SetFileName (astrFileList[iFileListCursor]);
+          pBuffer->Load ();
+          pBuffer->FillGap ();
+          pBuffer->SetCursor(1, 0);          
+          ToggleFileListDisplay ();
+    move(3,0);
+    printw("current : %s                             ",  pBufferManager->GetCurrent()->GetName());
+          
+          }
+        }
         break;
         
       case (CTRL_P):       ToggleFileListDisplay (); break;
@@ -425,7 +467,7 @@ VOID NCursesShell::DisplayWindow (INT                  iScreenX,
   INT  iTopLine = locWindowPosition.iLine;
   INT  iTopCol = locWindowPosition.iCol;
   
-  iTopLine = TMin (iMaxLine - iHeight, TMax (1, iTopLine));
+  iTopLine = TMax (1, TMin (iMaxLine - iHeight, iTopLine));
   iTopCol  = TMax (0, iTopCol);
   locWindowPosition.Set (iTopLine, iTopCol);
   pBuffer->SetWindowPos (locWindowPosition);
@@ -437,10 +479,10 @@ VOID NCursesShell::DisplayWindow (INT                  iScreenX,
     for (INT  iScreenLine = 0; iScreenLine < iHeight; ++iScreenLine)
       {
       locBufferCurr.iLine = iScreenLine + iTopLine;
+      move(iScreenLine + iScreenY,iScreenX);
+      
       if (locBufferCurr.iLine < iMaxLine)
         {
-        move(iScreenLine + iScreenY,iScreenX);
-        
         INT  iCurrDigits  = NumDigits (locBufferCurr.iLine);
         INT  iCurrPadding = iMaxLineDigits - iCurrDigits;
         INT  iDivisor = 1;
@@ -464,6 +506,13 @@ VOID NCursesShell::DisplayWindow (INT                  iScreenX,
           }
         // marking column  (TODO)
         addch (' ' | COLOR_PAIR(COLOR_WHITE) | A_REVERSE);
+        }
+      else
+        {
+        for (INT iIndex = 0; iIndex <= iMaxLineDigits; ++iIndex)
+          {
+          addch (' ' | COLOR_PAIR(COLOR_WHITE) | A_REVERSE);
+          };
         }
         
       }
@@ -510,6 +559,14 @@ VOID NCursesShell::DisplayWindow (INT                  iScreenX,
         iHighlightFlag = GetHighlightState (locBufferCurr, locHighlightStart, locHighlightEnd) ? A_REVERSE : 0;
         addch (' ' | iHighlightFlag);
         }
+      }
+    else
+      {
+      move (iScreenLine, iScreenX);
+      for (iScreenCol = 0; iScreenCol < iWidth; ++iScreenCol)
+        {
+        addch (' ');
+        }      
       }
     }
 
@@ -689,7 +746,6 @@ INT  NCursesShell::NCursesToVKey (INT  nCursesKey)
 
   move(1,0);
   printw("ncurses key: %d %x %o                             ", nCursesKey, nCursesKey, nCursesKey);
-  
   
   if (nCursesKey >= 32 && nCursesKey <= 126) 
     {

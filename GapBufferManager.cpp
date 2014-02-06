@@ -56,6 +56,21 @@ VOID GapBufferManager::SetCurrent (const char *  szNameIn)
   {
   pCurrent = GetBuffer (szNameIn);
   };
+  
+//-----------------------------------------------------------------------------
+VOID GapBufferManager::SetCurrent (GapBuffer*  pBufferIn)
+  {
+  GapBuffer *  pSearch = pBuffers;
+  while (pSearch != NULL)
+    {
+    if (pSearch == pBufferIn)
+      {
+      pCurrent = pBufferIn;
+      return;
+      }
+    pSearch = pSearch->pNext;
+    }
+  };
 
 //-----------------------------------------------------------------------------
 GapBuffer *  GapBufferManager::GetCurrent (VOID)
@@ -70,6 +85,21 @@ GapBuffer *  GapBufferManager::GetBuffer (const char *  szNameIn)
   while (pSearch != NULL)
     {
     if (strcmp (pSearch->GetName(), szNameIn) == 0)
+      {
+      return (pSearch);
+      }
+    pSearch = pSearch->pNext;
+    }
+  return (NULL);
+  };
+
+//-----------------------------------------------------------------------------
+GapBuffer *  GapBufferManager::GetBufferByFileName (const char *  szFileNameIn)
+  {
+  GapBuffer *  pSearch = pBuffers;
+  while (pSearch != NULL)
+    {
+    if (strcmp (pSearch->GetFileName(), szFileNameIn) == 0)
       {
       return (pSearch);
       }
@@ -93,12 +123,12 @@ VOID GapBufferManager::SetNextToCurrent (VOID)
   };
 
 //-----------------------------------------------------------------------------
-VOID GapBufferManager::CreateBuffer (const char *  szNameIn)
+GapBuffer *  GapBufferManager::CreateBuffer (const char *  szNameIn)
   {
   GapBuffer *  pBufferNew = new GapBuffer();
   if (pBufferNew == NULL) 
     {
-    return;
+    return (NULL);
     }
   pBufferNew->SetName (szNameIn);
   // add to the end of the list
@@ -120,7 +150,8 @@ VOID GapBufferManager::CreateBuffer (const char *  szNameIn)
     pBufferNew->pPrev = pBufferLast;
     };
   pBufferNew->pNext = NULL;  
-  SetCurrent (szNameIn);
+  SetCurrent (pBufferNew);
+  return (pBufferNew);
   };
 
 //-----------------------------------------------------------------------------
@@ -164,4 +195,19 @@ const char *  GapBufferManager::GetCurrentBufferName ()
     }
   return NULL;
   };
-    
+
+  
+//-----------------------------------------------------------------------------
+GapBuffer *  GapBufferManager::OpenFile (const char *  pszFileNameIn)
+  {
+  // TODO:  Reduce name to just the file name instead of the entire path.
+  
+  GapBuffer *  pBuffer = CreateBuffer (pszFileNameIn);
+  pBuffer->AllocBuffer (256);
+  pBuffer->SetFileName (pszFileNameIn);
+  pBuffer->Load ();
+  pBuffer->FillGap ();
+  pBuffer->SetCursor(1, 0);  
+  return (pBuffer);
+  }
+  
