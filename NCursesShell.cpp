@@ -47,8 +47,8 @@ NCursesShell::NCursesShell ()
   
   astrFileList.Append ("./SyntaxTest.txt");       aiFileLoaded.Append (1);
   astrFileList.Append ("./test/");                aiFileLoaded.Append (0);
-  astrFileList.Append ("./test/helloWorld.txt");  aiFileLoaded.Append (0);
-  astrFileList.Append ("./test/helloWorld2.txt"); aiFileLoaded.Append (0);
+  astrFileList.Append ("./test/helloWorld.txt");  aiFileLoaded.Append (1);
+  astrFileList.Append ("./test/helloWorld2.txt"); aiFileLoaded.Append (1);
   astrFileList.Append ("./test/helloWorld3.txt"); aiFileLoaded.Append (0);
   astrFileList.Append ("./test/helloWorld4.txt"); aiFileLoaded.Append (0);
   astrFileList.Append ("./test/helloWorld5.txt"); aiFileLoaded.Append (0);
@@ -159,7 +159,7 @@ VOID NCursesShell::Update (GapBufferManager *   pBufferManager,
     //refresh();
     if (bShowFileList)
       {
-      DisplayFileList (iStartX, iStartY + iHeader, iLeft, iHeight - iHeader);
+      DisplayFileList (pBufferManager, iStartX, iStartY + iHeader, iLeft, iHeight - iHeader);
       bExit = ProcessInputFileList (pBufferManager, cmdManager, editorSettings);
       }
     else 
@@ -175,7 +175,8 @@ VOID NCursesShell::Update (GapBufferManager *   pBufferManager,
   };
 
 //-----------------------------------------------------------------------------
-VOID NCursesShell::DisplayFileList (INT                  iScreenX, 
+VOID NCursesShell::DisplayFileList (GapBufferManager *   pBufferManager,
+                                    INT                  iScreenX, 
                                     INT                  iScreenY,
                                     INT                  iWidth,
                                     INT                  iHeight)
@@ -203,9 +204,26 @@ VOID NCursesShell::DisplayFileList (INT                  iScreenX,
       {
       attron (A_REVERSE);
       };
+    // TODO: display path indentation 
     
+    // display modified flag
+    INT  iModifiedFlagWidth = 0;
+    if (aiFileLoaded [iLine])
+      {
+      GapBuffer *  pCurr = pBufferManager->GetBuffer (astrFileList[iLine].AsChar ());
+      if (pCurr != NULL)
+        {
+        if (pCurr->GetIsModified ())
+          {
+          addch ('*');
+          iModifiedFlagWidth = 1;
+          }
+        }
+      }
+    
+    // display file name
     addnstr (astrFileList[iLine].AsChar (), TMin (iWidth, iStringLength));
-    iRemaining = iWidth - iStringLength;
+    iRemaining = iWidth - iStringLength - iModifiedFlagWidth;
     while (iRemaining > 0)
       {
       addch (' ');
@@ -413,8 +431,8 @@ BOOL NCursesShell::ProcessInput (GapBuffer *          pInputBuffer,
       case (VKFLG_ALT | VKEY_UP):       cmdManager.ExecuteCommand ("FindTextPrev", NULL);  break;
       case (VKFLG_ALT | VKEY_DOWN):     cmdManager.ExecuteCommand ("FindTextNext", NULL);  break;
       case (CTRL_P):                    ToggleFileListDisplay (); break;
-      
-      
+      case (CTRL_S):                    cmdManager.ExecuteCommand ("Save", NULL);  break;
+      case (CTRL_W):                    cmdManager.ExecuteCommand ("SaveAll", NULL);  break;
       
       case (CTRL_Q):
         return (TRUE);

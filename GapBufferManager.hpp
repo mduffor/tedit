@@ -48,6 +48,10 @@ class GapBufferManager
     const char *  GetCurrentBufferName (VOID);
     GapBuffer *   OpenFile             (const char *  pszFileNameIn);
     
+    GapBuffer *   GetFirstBuffer       (VOID);
+    GapBuffer *   GetNextBuffer        (GapBuffer *  pCurrBuffer);
+    
+    
 };
 
 #endif // GAPBUFFERMANAGER_HPP

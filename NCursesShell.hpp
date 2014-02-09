@@ -56,7 +56,8 @@ class NCursesShell
                                 EditorSettings &     editorSettings,
                                 EntryFieldHandler &  entryFieldHandler);
 
-    VOID DisplayFileList       (INT                  iScreenX, 
+    VOID DisplayFileList       (GapBufferManager *   pBufferManager,
+                                INT                  iScreenX, 
                                 INT                  iScreenY,
                                 INT                  iWidth,
                                 INT                  iHeight);

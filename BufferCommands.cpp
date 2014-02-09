@@ -106,6 +106,11 @@ VOID InitBufferCommands (GapBufferManager *   pBufferManagerIn,
   
   cmdManagerIn.AddCommand ("FindTextNext", CmdFindTextNext);
   cmdManagerIn.AddCommand ("FindTextPrev", CmdFindTextPrev);
+  
+  cmdManagerIn.AddCommand ("Save",    CmdSaveCurrentBuffer);
+  cmdManagerIn.AddCommand ("SaveAll", CmdSaveAllBuffers);
+  
+  
   };
 
 //-----------------------------------------------------------------------------
@@ -777,7 +782,49 @@ VOID CmdFindTextPrev (RStrArray *  arrayParams)
   pDisplayBuffer->MoveWindowToCursor ();
   };  
   
+//-----------------------------------------------------------------------------
+VOID CmdSaveCurrentBuffer (RStrArray *  arrayParams)
+  {
   
+  GapBuffer *  pCurr = pGapBufferManager->GetCurrent ();
+  if (pCurr != NULL)
+    {
+    RStr  strFileName (pCurr->GetFileName());
+    strFileName.StripTrailingWhitespace();
+    if (strFileName.IsEmpty ())
+      {
+      // TODO: Handle error condition where file name is not defined.
+      }
+    else
+      {
+      pCurr->Save ();
+      }
+    }
+  };  
+  
+//-----------------------------------------------------------------------------
+VOID CmdSaveAllBuffers (RStrArray *  arrayParams)
+  {
+
+  GapBuffer *  pCurr = pGapBufferManager->GetFirstBuffer ();
+  while (pCurr != NULL)
+    {
+    if (pCurr->GetIsModified ())
+      {
+      RStr  strFileName (pCurr->GetFileName());
+      strFileName.StripTrailingWhitespace();
+      if (strFileName.IsEmpty ())
+        {
+        // TODO: Handle error condition where file name is not defined.
+        }
+      else
+        {
+        pCurr->Save ();
+        }
+      }
+    pCurr = pGapBufferManager->GetNextBuffer (pCurr);
+    };
+  };  
   
   
   

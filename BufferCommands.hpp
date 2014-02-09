@@ -85,22 +85,27 @@ VOID ScrollWindowPageDown (VOID);
 VOID ScrollWindow (INT  iNumLinesIn);
 
 
-VOID CmdSelectionCut (RStrArray *  arrayParams);
-VOID CmdSelectionCopy (RStrArray *  arrayParams);
-VOID CmdSelectionPaste (RStrArray *  arrayParams);
-VOID CmdSelectionDelete (RStrArray *  arrayParams);
-VOID CmdSelectAll (RStrArray *  arrayParams);
-VOID CmdScrollWindowUp (RStrArray *  arrayParams);
-VOID CmdScrollWindowDown (RStrArray *  arrayParams);
-VOID CmdCursorPageUp (RStrArray *  arrayParams);
-VOID CmdCursorPageDown (RStrArray *  arrayParams);
+VOID CmdSelectionCut     (RStrArray *  arrayParams = NULL);
+VOID CmdSelectionCopy    (RStrArray *  arrayParams = NULL);
+VOID CmdSelectionPaste   (RStrArray *  arrayParams = NULL);
+VOID CmdSelectionDelete  (RStrArray *  arrayParams = NULL);
+VOID CmdSelectAll        (RStrArray *  arrayParams = NULL);
+VOID CmdScrollWindowUp   (RStrArray *  arrayParams = NULL);
+VOID CmdScrollWindowDown (RStrArray *  arrayParams = NULL);
+VOID CmdCursorPageUp     (RStrArray *  arrayParams = NULL);
+VOID CmdCursorPageDown   (RStrArray *  arrayParams = NULL);
 
-VOID CmdGotoLinePrompt (RStrArray *  arrayParams);
-VOID CmdGotoLine (RStrArray *  arrayParams);
-VOID CmdFindTextPrompt (RStrArray *  arrayParams);
-VOID CmdFindText (RStrArray *  arrayParams);
+VOID CmdGotoLinePrompt (RStrArray *  arrayParams = NULL);
+VOID CmdGotoLine       (RStrArray *  arrayParams = NULL);
+VOID CmdFindTextPrompt (RStrArray *  arrayParams = NULL);
+VOID CmdFindText       (RStrArray *  arrayParams = NULL);
 
-VOID CmdFindTextNext (RStrArray *  arrayParams);
-VOID CmdFindTextPrev (RStrArray *  arrayParams);
+VOID CmdFindTextNext (RStrArray *  arrayParams = NULL);
+VOID CmdFindTextPrev (RStrArray *  arrayParams = NULL);
+
+VOID CmdSaveCurrentBuffer (RStrArray *  arrayParams = NULL);
+VOID CmdSaveAllBuffers    (RStrArray *  arrayParams = NULL);
+
+
 
 #endif // BUFFERCOMMANDS_HPP

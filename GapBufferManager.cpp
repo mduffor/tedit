@@ -209,5 +209,20 @@ GapBuffer *  GapBufferManager::OpenFile (const char *  pszFileNameIn)
   pBuffer->FillGap ();
   pBuffer->SetCursor(1, 0);  
   return (pBuffer);
-  }
+  };
+
+//-----------------------------------------------------------------------------
+GapBuffer *  GapBufferManager::GetFirstBuffer  (VOID)
+  {
+  return (pBuffers);
+  };
+
+//-----------------------------------------------------------------------------
+GapBuffer *  GapBufferManager::GetNextBuffer  (GapBuffer *  pCurrBuffer)
+  {
+  if (pCurrBuffer == NULL) return (NULL);
+  return (pCurrBuffer->pNext);
+  };
+  
+  
   
