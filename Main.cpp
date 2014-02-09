@@ -61,6 +61,7 @@ int main (int argc, char *argv[])
 
   if (iFilesOpened == 0)
     {
+    pGapManager->OpenFile ("./SyntaxTest.txt");
     //GapBuffer *  gapBuffer = pGapManager->OpenFile ("./SyntaxTest.txt");
     GapBuffer *  gapBuffer = pGapManager->OpenFile ("./test/helloWorld2.txt");
 

@@ -18,6 +18,36 @@
 // along with TEdit.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+/*
+
+  Next steps:
+    Build file list from opened files
+      Add string to StrArray without duplication
+      Given a file, break it apart and add all of its paths without duplication
+      Sort string array. (possibly use index sorter, then some sort of string mover)
+      add default paths.
+      On enter for path,
+        Find all children of this path.  for each:
+          remove all non-loaded file entries. 
+          remove all directories that aren't in a loaded file.
+        scan and update children
+        sort.  
+        update arrays for changed entries.
+    Ctrl-O to launch file list in open mode.
+    Close Command
+      If modified, prompt for saving.
+      Save if returned y/Y
+      Set previous buffer to current
+      delete targeet buffer 
+    Header swap
+      Store list of file/header extension pairs
+      Break filename of current buffer into component parts, split on period.
+      Find match in pairs for right-most token
+      Swap out token.  Rebuild filename.  OpenFile.  set current.
+      
+
+
+*/
 #include <stdio.h>
 #include <string.h>
 #include "Types.hpp"
@@ -218,6 +248,11 @@ VOID NCursesShell::DisplayFileList (GapBufferManager *   pBufferManager,
           addch ('*');
           iModifiedFlagWidth = 1;
           }
+        else
+          {
+          addch ('-');
+          iModifiedFlagWidth = 1;
+          } 
         }
       }
     

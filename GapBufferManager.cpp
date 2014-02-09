@@ -200,9 +200,16 @@ const char *  GapBufferManager::GetCurrentBufferName ()
 //-----------------------------------------------------------------------------
 GapBuffer *  GapBufferManager::OpenFile (const char *  pszFileNameIn)
   {
+  // Make sure it isn't already open!
+  GapBuffer *  pBuffer = GetBufferByFileName (pszFileNameIn);
+  if (pBuffer != NULL)
+    {
+    return (pBuffer);
+    };
+  
   // TODO:  Reduce name to just the file name instead of the entire path.
   
-  GapBuffer *  pBuffer = CreateBuffer (pszFileNameIn);
+  pBuffer = CreateBuffer (pszFileNameIn);
   pBuffer->AllocBuffer (256);
   pBuffer->SetFileName (pszFileNameIn);
   pBuffer->Load ();
